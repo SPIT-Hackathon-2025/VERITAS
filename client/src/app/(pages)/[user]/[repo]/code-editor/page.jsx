@@ -5,10 +5,11 @@ import {
   SandpackThemeProvider,
 } from "@codesandbox/sandpack-react";
 import { nightOwl } from "@codesandbox/sandpack-themes";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import SandpackBetter from "@/components/SandpackBetter";
 import { useSearchParams } from "next/navigation"; // ✅ Use next/navigation instead of next/router
 import { SocketProvider } from "@/app/context/socket";
+import useRepoStore from "@/app/context/repoStore";
 
 // Utility function to transform repository data
 const transformRepoToFiles = (repo) => {
@@ -39,9 +40,11 @@ const MySandpackComponent = () => {
   const [files, setFiles] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-
+  const {setRepo,repoState}=useRepoStore();
+  const [currFileId, setCurrFileId] = useState(null);
   const BACKEND_URL = process.env.NEXT_PUBLIC_SERVER_URL;
-  console.log(repoKey)
+  // console.log(repoKey)
+    
   useEffect(() => {
     const fetchRepo = async () => {
       if (!repoKey) return;
@@ -53,7 +56,8 @@ const MySandpackComponent = () => {
         const response = await fetch(`${BACKEND_URL}/api/v1/repo/get-repo/${repoKey}`);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
-
+        setRepo(data)
+        
         if (data.repo) {
           setFiles(transformRepoToFiles(data.repo));
         } else {
@@ -92,15 +96,15 @@ const MySandpackComponent = () => {
   }
 
   return (
-    // <SocketProvider>
+    <SocketProvider>
     <div className="h-screen flex flex-col bg-[#011627]">
       <SandpackProvider template="react-ts" files={files} theme="dark">
         <SandpackThemeProvider theme={nightOwl}>
-          <SandpackBetter />
+          <SandpackBetter/>
         </SandpackThemeProvider>
       </SandpackProvider>
     </div>
-    // </SocketProvider>
+    </SocketProvider>
   );
 };
 

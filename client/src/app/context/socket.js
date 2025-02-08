@@ -20,7 +20,6 @@ export const SocketProvider = ({ children }) => {
   const repo = params.repo
 
   console.log("params: ",params);
-  
 
   useEffect(() => {
     if (!socket) {
