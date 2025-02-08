@@ -18,15 +18,15 @@ export const SocketProvider = ({ children }) => {
   const params = useParams();
 
   const repo = params.repo
+  const owner = params.user
 
   console.log("params: ",params);
-  
 
   useEffect(() => {
     if (!socket) {
       const newSocket = io(process.env.NEXT_PUBLIC_SERVER_URL, {
         withCredentials: true,
-        query: {user,repo},
+        query: {user,repo, owner},
         reconnection: true,
         transports: ['websocket', 'polling'],
       });

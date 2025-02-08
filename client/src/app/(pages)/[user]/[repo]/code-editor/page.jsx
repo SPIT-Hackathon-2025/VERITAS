@@ -92,7 +92,7 @@ const MySandpackComponent = () => {
   }
 
   return (
-    // <SocketProvider>
+    <SocketProvider>
     <div className="h-screen flex flex-col bg-[#011627]">
       <SandpackProvider template="react-ts" files={files} theme="dark">
         <SandpackThemeProvider theme={nightOwl}>
@@ -100,7 +100,7 @@ const MySandpackComponent = () => {
         </SandpackThemeProvider>
       </SandpackProvider>
     </div>
-    // </SocketProvider>
+    </SocketProvider>
   );
 };
 

@@ -35,10 +35,8 @@ function SandpackBetter() {
   const { files, activeFile } = sandpack;
   const code = files[activeFile].code;
   const {users} = useOnlineUserStore();
-  const params = useParams();
-  const repo = params
-  const user = JSON.parse(localStorage.getItem('user')).uid;
-  console.log("User",user);
+  // const params = useParams();
+  // const user = JSON.parse(localStorage.getItem('user')).uid;
   
   const editorRef = useRef(null);
   const [cursors,setCursors] = useState([])

@@ -21,6 +21,8 @@ export const setupSocket = (server) => {
 
     const repo = socket.handshake.query.repo
 
+    const owner = socket.handshake.query.owner
+
     console.log("Socket log: ", user);
 
     const userid = user.uid;
@@ -28,6 +30,7 @@ export const setupSocket = (server) => {
     const email = user.email;
 
     if (userid) {
+      
       // Store user details in the map
       userMap.set(userid, {
         socketId: socket.id,
