@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import { useSocket } from "@/app/context/socket";
 import useOnlineUserStore from "@/app/context/onlineUserStore";
 import { useParams } from "next/navigation";
+import useRepoStore from "@/app/context/repoStore";
 
 const OnlineUserBadge = ({ name, email }) => (
   <div className="flex items-center gap-2 p-2 hover:bg-[#1E2D3D] rounded transition-colors">
@@ -38,10 +39,43 @@ function SandpackBetter() {
   const params = useParams();
   const repo = params;
   const user = JSON.parse(localStorage.getItem("user")).uid;
-  console.log("User", user);
+
+  const { setRepo, repoState } = useRepoStore();
 
   const editorRef = useRef(null);
   const [cursors, setCursors] = useState([]);
+
+  // console.log("repoState", repoState);
+
+  // useEffect(() => {
+  //   const id=getFileIdFromPath(repoState, "README.md");
+  //   console.log('id is',id);
+    
+  // }, [repoState]);
+
+  function getFileIdFromPath(repo, filePath) {
+    function searchFolders(folders, target) {
+      
+      if(!folders || !folders.length) return null; // File not found
+      for(const folder of folders) {
+        console.log('folder',folder);
+        
+        if(folder.isFile && folder.name === target) {
+            return folder._id;
+          } else {
+            const id=searchFolders(folder.children, target)
+            if(id) return id
+          }
+        }
+        return null
+      }
+      
+
+    const target = filePath.split("/").pop(); // Split path into array
+    console.log(repo?.repo?.mainFolders);
+    
+    return searchFolders(repo?.repo?.mainFolders, target);
+  }
 
   useEffect(() => {
     if (code) {

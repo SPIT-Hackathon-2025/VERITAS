@@ -1,9 +1,9 @@
 import { create } from "zustand";
 
-const useRepo = create((set) => ({
-  repo: {},
+const useRepoStore = create((set) => ({
+  repoState: {},
 
-  setRepo: (repo) => set({ repo }),
+  setRepo: (repoState) => set({ repoState }),
 }));
 
-export default useRepo;
+export default useRepoStore;
