@@ -1,6 +1,6 @@
+"use client"
 import io from 'socket.io-client'
 import {useEffect, createContext, useContext, useRef, Children, useState} from 'react'
-import { server_url } from '../routes'
 
 const socketContext = createContext(null)
 
