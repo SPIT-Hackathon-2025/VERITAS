@@ -60,6 +60,7 @@ const MySandpackComponent = () => {
         options={{
           visibleFiles: Object.keys(files),
           recompileMode: "immediate",
+          showNavigator: true,
         }}
       >
         <SandpackThemeProvider theme={nightOwl}>
