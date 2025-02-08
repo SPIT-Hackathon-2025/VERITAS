@@ -5,8 +5,6 @@ import { useAuth } from '@/app/hooks/useAuth';
 const Sidebar = ({ isOpen, toggleSidebar }) => {
   const { user, loading, logout } = useAuth();
 
-  // Debugging Log
-  console.log("User data:", user);
 
   const menuItems = [
     { icon: <Home className="h-5 w-5" />, label: "Dashboard", color: "text-blue-500" },
@@ -77,11 +75,11 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
         <div className={`flex items-center ${isOpen ? 'justify-start' : 'justify-center'} 
           text-gray-400 hover:text-white transition-colors duration-200`}>
           <div className="relative">
-            <img
+            {/* <img
               src="/api/placeholder/32/32"
               alt="Profile"
               className="w-8 h-8 rounded-full border-2 border-gray-700"
-            />
+            /> */}
             <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-gray-900"></div>
           </div>
           {isOpen && <span className="ml-3 text-sm font-medium">{user?.name || "Guest"}</span>}

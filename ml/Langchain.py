@@ -109,7 +109,7 @@ class GroqRAGSystem:
             Example: {"product_name": "Laptop", "description": "Powerful gaming laptop", "quantity": 10, "price": 1200.99}
         """
         # Extract text-based descriptions for embeddings
-        texts = [f"{item['product_name']} - {item.get('quantity', '')} - {item.get('price','')} - {item.get('category','')}" for item in inventory]
+        texts = [f"file_name = {item['file_name']} - content={item.get('content', '')} - repo_name={item.get('repo_name','')} - last_modified_by={item.get('last_modified_by','')}" for item in inventory]
 
         
         # Store full item details as metadata
