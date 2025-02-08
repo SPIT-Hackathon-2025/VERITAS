@@ -1,5 +1,6 @@
 import { fileModel } from "../models/fileModel.js"; // Import the file model
 import { repoModel } from "../models/repoModel.js";
+import { userModel } from "../models/userModel.js";
 
 // Create a new folder
 export const createFolderController = async (req, res) => {
@@ -110,3 +111,53 @@ export const createFileController = async (req, res) => {
         return res.status(500).json({ message: "Internal Server Error" });
     }
 };
+
+export const getAllFilesController = async (req, res) => {
+    try {
+        // Fetch all files from the database
+        const allFiles = await fileModel.find({ isFile: true });
+
+        if (!allFiles || allFiles.length === 0) {
+            return res.status(404).json({ success: false, message: "No files found" });
+        }
+
+        // Prepare an array to store the file details
+        let filesArray = [];
+
+        // Process files asynchronously
+        for (const file of allFiles) {
+            const { name, content, repo, path } = file;
+
+            // Find the repository details
+            const repoData = await repoModel.findById(repo);
+            if (!repoData) continue;
+
+            // Find the owner details
+            const ownerData = await userModel.findById(repoData.owner);
+            if (!ownerData) continue;
+
+            // Construct the file object
+            const fileObject = {
+                file_name: name,
+                content: content,
+                repo_name: repoData.name,
+                owner_name: ownerData.name,
+                path: path
+            };
+
+            // Add to the array
+            filesArray.push(fileObject);
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "All files fetched successfully",
+            file: filesArray
+        });
+
+    } catch (error) {
+        console.error("Error fetching all files:", error);
+        return res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+};
+
