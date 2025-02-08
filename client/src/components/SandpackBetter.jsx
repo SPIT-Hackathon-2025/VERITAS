@@ -1,3 +1,5 @@
+
+import { useEffect, useRef, useState } from "react";
 import {
   SandpackPreview,
   SandpackCodeEditor,
@@ -5,8 +7,8 @@ import {
 } from "@codesandbox/sandpack-react";
 import { SandpackFileExplorer } from "sandpack-file-explorer";
 import { Terminal, Plus, Users } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
 import { useSocket } from "@/app/context/socket";
+import Navbar from './code-editor/ide-navbar';
 import useOnlineUserStore from "@/app/context/onlineUserStore";
 
 const OnlineUserBadge = ({ name, email }) => (
@@ -26,9 +28,10 @@ const OnlineUserBadge = ({ name, email }) => (
   </div>
 );
 
-function SandpackBetter() {
+const SandpackBetter = () => {
   const socket = useSocket();
   const [showConsole, setShowConsole] = useState(false);
+  const [activeTab, setActiveTab] = useState("editor");
   const [showOnlineUsers, setShowOnlineUsers] = useState(true);
   const { sandpack } = useSandpack();
   const { files, activeFile } = sandpack;
@@ -153,57 +156,40 @@ function SandpackBetter() {
       </div>
     </div>
   );
-
   return (
-    <div className="absolute inset-0 flex h-screen w-screen font-jetbrains">
-      {/* File Explorer */}
-      <div className="w-64 border-r border-[#1E2D3D] flex flex-col h-full">
-        <div className="p-3 border-b border-[#1E2D3D] flex justify-between items-center">
-          <span className="text-[#5F7E97] font-medium text-sm">Explorer</span>
-          <button className="p-1 hover:bg-[#1E2D3D] rounded">
-            <Plus className="w-4 h-4 text-[#5F7E97]" />
-          </button>
+    <div className="flex flex-col h-screen bg-[#011627]">
+      <Navbar />
+      <div className="flex flex-1 overflow-hidden">
+        <div className="w-64 border-r border-[#1E2D3D] flex flex-col">
+          <div className="h-10 border-b border-[#1E2D3D] flex justify-between items-center px-3">
+            <span className="text-[#5F7E97] font-medium">Explorer</span>
+            <button className="p-1 hover:bg-[#1E2D3D] rounded">
+              <Plus className="w-4 h-4 text-[#5F7E97]" />
+            </button>
+          </div>
+          <div className="flex-1 overflow-auto">
+            <SandpackFileExplorer />
+          </div>
         </div>
-        <div className="flex-1 overflow-auto">
-          <SandpackFileExplorer />
-        </div>
-        
-        {/* Online Users Section */}
-        <div className="border-t border-[#1E2D3D]">
-          <button
-            className="w-full p-2 flex items-center justify-between gap-2 text-[#5F7E97] hover:bg-[#1E2D3D] transition-colors"
-            onClick={() => setShowOnlineUsers(!showOnlineUsers)}
-          >
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              <span className="text-sm">Online Users</span>
-            </div>
-            <span className="text-xs bg-[#1E2D3D] px-2 py-1 rounded">
-              {users.length}
-            </span>
-          </button>
-          {showOnlineUsers && Array.isArray(users) && (
-            <div className="max-h-48 overflow-y-auto border-t border-[#1E2D3D]">
-              {users.map((user) => (
-                <OnlineUserBadge
-                  key={user.userId}
-                  name={user.name}
-                  email={user.email}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
 
-      {/* Rest of the existing code remains the same */}
-      <div className="flex-1 flex flex-col h-full">
-        <div className="flex flex-1">
-          <div className="flex-1">
-            <div className="flex-1 relative" 
-            ref={editorRef}
-            onMouseDown={handleCursorMove}
+        <div className="flex-1 flex flex-col">
+          <div className="flex border-b border-[#1E2D3D]">
+            <button
+              className={`px-4 py-2 ${activeTab === "editor" ? "bg-[#1E2D3D] text-white" : "text-[#5F7E97]"}`}
+              onClick={() => setActiveTab("editor")}
             >
+              Editor
+            </button>
+            <button
+              className={`px-4 py-2 ${activeTab === "preview" ? "bg-[#1E2D3D] text-white" : "text-[#5F7E97]"}`}
+              onClick={() => setActiveTab("preview")}
+            >
+              Preview
+            </button>
+          </div>
+
+          <div className="flex-1">
+            {activeTab === "editor" ? (
               <SandpackCodeEditor
                 wrapContent
                 showTabs
@@ -212,44 +198,31 @@ function SandpackBetter() {
                 showLineNumbers
                 style={{ height: "100%", fontFamily: "JetBrains Mono, monospace" }}
               />
-              {Object.entries(cursors).map(([userId, cursor]) => (
-                <RemoteCursor
-                  key={userId}
-                  color={getUserColor(userId)}
-                  position={cursor.position}
-                  username={cursor.name}
-                />
-              ))}
-            </div>
-          </div>
-          <div className="w-1/2 border-l border-[#1E2D3D] flex flex-col">
-            <div className="h-9 border-b border-[#1E2D3D] flex items-center px-4">
-              <span className="text-[#5F7E97] text-sm">Preview</span>
-            </div>
-            <div className="flex-1">
+            ) : (
               <SandpackPreview style={{ height: "100%" }} />
-            </div>
+            )}
           </div>
         </div>
-        <div className="border-t border-[#1E2D3D]">
-          <button
-            className="w-full p-2 flex items-center justify-center gap-2 text-[#5F7E97] hover:bg-[#1E2D3D] transition-colors"
-            onClick={() => setShowConsole(!showConsole)}
-          >
-            <Terminal className="w-4 h-4" />
-            <span className="text-sm">Console</span>
-          </button>
-          {showConsole && (
-            <div className="h-48 border-t border-[#1E2D3D] bg-[#011627] p-4">
-              <div className="text-[#5F7E97] text-sm">
-                Console output will appear here...
-              </div>
+      </div>
+
+      <div className="border-t border-[#1E2D3D]">
+        <button
+          className="w-full p-2 flex items-center justify-center gap-2 text-[#5F7E97] hover:bg-[#1E2D3D] transition-colors"
+          onClick={() => setShowConsole(!showConsole)}
+        >
+          <Terminal className="w-4 h-4" />
+          <span className="text-sm">Console</span>
+        </button>
+        {showConsole && (
+          <div className="border-t border-[#1E2D3D] bg-[#011627] p-4 overflow-auto h-40">
+            <div className="text-[#5F7E97] text-sm">
+              Console output will appear here...
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
-}
+};
 
 export default SandpackBetter;

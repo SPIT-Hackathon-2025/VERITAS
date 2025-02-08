@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+const BACKEND_URL = process.env.NEXT_PUBLIC_SERVER_URL;
 
 const RegisterForm = () => {
   const [email, setEmail] = useState("");
