@@ -8,6 +8,7 @@ import { Terminal, Plus, Users } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useSocket } from "@/app/context/socket";
 import useOnlineUserStore from "@/app/context/onlineUserStore";
+import { useParams } from "next/navigation";
 
 const OnlineUserBadge = ({ name, email }) => (
   <div className="flex items-center gap-2 p-2 hover:bg-[#1E2D3D] rounded transition-colors">
@@ -34,6 +35,8 @@ function SandpackBetter() {
   const { files, activeFile } = sandpack;
   const code = files[activeFile].code;
   const {users} = useOnlineUserStore();
+  const params = useParams();
+  const repo = params
   const user = JSON.parse(localStorage.getItem('user')).uid;
   console.log("User",user);
   
