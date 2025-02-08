@@ -13,7 +13,7 @@ export const SocketProvider=({children})=>{
     const [isSocketConnected, setIsSocketConnected] = useState(false);
         useEffect(()=>{
             const userid='id'
-                socket.current= io(server_url,{
+                socket.current= io(process.env.NEXT_PUBLIC_SERVER_URL,{
                     withCredentials:true,
                     query:{userid},
                     reconnection:true
