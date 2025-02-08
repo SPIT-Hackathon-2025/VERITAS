@@ -8,6 +8,7 @@ import { SandpackFileExplorer } from "sandpack-file-explorer";
 import { Terminal, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSocket } from "@/app/context/socket";
+import { FileTree } from "./fileTree";
 
 function SandpackBetter() {
 
@@ -18,7 +19,6 @@ function SandpackBetter() {
   const { sandpack } = useSandpack();
   const { files, activeFile } = sandpack;
   const code = files[activeFile].code;
-  
   useEffect(() => {
     if (code) {
       // Call your backend update function here
@@ -58,7 +58,7 @@ function SandpackBetter() {
           </button>
         </div>
         <div className="flex-1 overflow-auto">
-          <SandpackFileExplorer />
+          <FileTree files={files} activeFile={activeFile}/>
         </div>
       </div>
 
