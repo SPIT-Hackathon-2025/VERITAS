@@ -1,12 +1,18 @@
-import React from 'react'
-import { SocketProvider } from './context/socket'
+import { HeroSection } from "@/components/HeroSection"
+import { FeaturesSection } from "@/components/FeaturesSection"
+import { SocialProofSection } from "@/components/SocialProofSection"
+import { Footer } from "@/components/Footer"
+import { FeedbackSection } from "@/components/SocialProofSection"
+import { SocketProvider } from "./context/socket"
 
-const page = () => {
+export default function Home() {
   return (
-    <SocketProvider>
-      <div>Main Page</div>
-    </SocketProvider>
+    <main className="flex min-h-screen flex-col items-center justify-between">
+      <HeroSection />
+      <FeaturesSection />
+      <FeedbackSection />
+      <Footer/>
+    </main>
   )
 }
 
-export default page

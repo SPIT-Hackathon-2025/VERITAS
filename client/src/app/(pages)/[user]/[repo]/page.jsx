@@ -11,7 +11,8 @@ import { nightOwl } from "@codesandbox/sandpack-themes";
 import { SandpackFileExplorer } from "sandpack-file-explorer";
 import { useEffect, useState } from "react";
 import { Terminal, Play, Plus, X } from 'lucide-react';
-import SandpackBetter from "@/app/components/SandpackBetter";
+import SandpackBetter from "@/components/SandpackBetter";
+
 
 const MySandpackComponent = () => {
   const [files, setFiles] = useState({
@@ -66,6 +67,7 @@ const MySandpackComponent = () => {
         </SandpackThemeProvider>
       </SandpackProvider>
     </div>
+              
   );
 };
 
