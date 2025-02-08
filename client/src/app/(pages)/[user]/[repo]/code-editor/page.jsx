@@ -12,6 +12,7 @@ import { SandpackFileExplorer } from "sandpack-file-explorer";
 import { useEffect, useState } from "react";
 import { Terminal, Play, Plus, X } from 'lucide-react';
 import SandpackBetter from "@/components/SandpackBetter";
+import { SocketProvider } from "@/app/context/socket";
 
 
 const MySandpackComponent = () => {
@@ -39,36 +40,37 @@ const MySandpackComponent = () => {
   const [showConsole, setShowConsole] = useState(false);
 
   return (
-    <div className="h-screen flex flex-col bg-[#011627]">
-      {/* Header */}
-      {/* <div className="h-12 border-b border-[#1E2D3D] flex items-center justify-between px-4">
-        <div className="flex items-center space-x-4">
-          <h1 className="text-white font-medium">Sandpack Editor</h1>
-        </div>
-        <div className="flex items-center space-x-3">
-          <button className="px-3 py-1.5 bg-[#0088CC] text-white rounded-md text-sm flex items-center gap-2 hover:bg-[#0099DD] transition-colors">
-            <Play className="w-4 h-4" />
-            Run
-          </button>
-        </div>
-      </div> */}
+    <SocketProvider>
+      <div className="h-screen flex flex-col bg-[#011627]">
+        {/* Header */}
+        {/* <div className="h-12 border-b border-[#1E2D3D] flex items-center justify-between px-4">
+          <div className="flex items-center space-x-4">
+            <h1 className="text-white font-medium">Sandpack Editor</h1>
+          </div>
+          <div className="flex items-center space-x-3">
+            <button className="px-3 py-1.5 bg-[#0088CC] text-white rounded-md text-sm flex items-center gap-2 hover:bg-[#0099DD] transition-colors">
+              <Play className="w-4 h-4" />
+              Run
+            </button>
+          </div>
+        </div> */}
 
-      <SandpackProvider
-        template="react-ts"
-        files={files}
-        theme="dark"
-        options={{
-          visibleFiles: Object.keys(files),
-          recompileMode: "immediate",
-          showNavigator: true,
-        }}
-      >
-        <SandpackThemeProvider theme={nightOwl}>
-          <SandpackBetter/>
-        </SandpackThemeProvider>
-      </SandpackProvider>
-    </div>
-              
+        <SandpackProvider
+          template="react-ts"
+          files={files}
+          theme="dark"
+          options={{
+            visibleFiles: Object.keys(files),
+            recompileMode: "immediate",
+            showNavigator: true,
+          }}
+        >
+          <SandpackThemeProvider theme={nightOwl}>
+            <SandpackBetter/>
+          </SandpackThemeProvider>
+        </SandpackProvider>
+      </div>
+    </SocketProvider> 
   );
 };
 

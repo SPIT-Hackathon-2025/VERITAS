@@ -14,6 +14,7 @@ function SandpackBetter() {
   const socket = useSocket();
 
   const [showConsole, setShowConsole] = useState(false);
+  const [onlineUsers,setOnlineUsers] = useState([])
   const { sandpack } = useSandpack();
   const { files, activeFile } = sandpack;
   const code = files[activeFile].code;
@@ -27,20 +28,28 @@ function SandpackBetter() {
 
   const updateCodeInBackend = (filePath, newCode) => {
     // Assuming you have a socket function here to send code updates
+    if(socket)
     socket.emit("updateFile", { filePath, newCode });
   };
 
-  useEffect(() => {
-    socket.on("fileUpdated", ({ filePath, newCode }) => {
-    // Update the file in the editor when another user makes changes
-    sandpack.updateFile(filePath, newCode);
-    });
-
-    // Cleanup the listener when the component is unmounted
-    return () => {
-    socket.off("fileUpdated");
-    };
-  }, [sandpack]);
+  // useEffect(() => {
+  //     if(socket){
+  //         socket.on("fileUpdated", ({ filePath, newCode }) => {
+  //           // Update the file in the editor when another user makes changes
+  //           sandpack.updateFile(filePath, newCode);
+  //         });
+      
+  //         socket.on('getAllOnlineUsers',(payload)=>{
+  //           setOnlineUsers(payload.users)
+  //           console.log(payload);      
+  //         })
+      
+  //         // Cleanup the listener when the component is unmounted
+  //         return () => {
+  //           socket.off("fileUpdated");
+  //         }
+  //     }
+  // },[]);
 
   return (
     <div className="absolute inset-0 flex h-screen w-screen font-jetbrains">

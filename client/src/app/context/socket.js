@@ -9,6 +9,7 @@ export const useSocket=()=>{
 }
 
 export const SocketProvider=({children})=>{
+    
     const socket=useRef()
     const [isSocketConnected, setIsSocketConnected] = useState(false);
         useEffect(()=>{
@@ -23,7 +24,7 @@ export const SocketProvider=({children})=>{
                     console.log("Connected to server");   
                     setIsSocketConnected(true);      
                 })
-                //clear function
+                // clear function
                 return ()=>{
                     socket.current.disconnect()
                     console.log("Socket disconnected");            
