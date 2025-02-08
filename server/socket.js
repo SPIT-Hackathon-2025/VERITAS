@@ -5,7 +5,7 @@ dotenv.config();
 export const setupSocket = (server) => {
   const io = new Server(server, {
     cors: {
-      origin: [process.env.FRONTEND_URL, 'http://192.168.56.1/3000','http://192.168.252.104/3001'],
+      origin: [process.env.FRONTEND_URL, 'http://192.168.56.1/3000','http://192.168.252.104/3001','http://192.168.252.153/3000'],
       methods: ['GET', 'POST'],
       credentials: true,
     },
@@ -18,11 +18,13 @@ export const setupSocket = (server) => {
 
   io.on('connection', (socket) => {
     const user = JSON.parse(socket.handshake.query.user);
+
     console.log("Socket log: ", user);
 
     const userid = user.uid;
     const name = user.displayName;
     const email = user.email;
+    const repo = user.repo;
 
     if (userid) {
       // Store user details in the map
@@ -31,6 +33,7 @@ export const setupSocket = (server) => {
         name: name,
         email: email,
         userId: userid,
+        repo,
         currentFile: null // Initialize with no file
       });
 
