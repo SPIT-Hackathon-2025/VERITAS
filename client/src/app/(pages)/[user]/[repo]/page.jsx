@@ -1,5 +1,6 @@
 "use client"
 import React, { useState } from 'react';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import {
   SandpackProvider,
   SandpackLayout,
@@ -9,8 +10,7 @@ import {
   useSandpack,
 } from "@codesandbox/sandpack-react";
 import { ChevronsUpDown, Terminal, Play, Plus } from 'lucide-react';
-import { FileTree } from '@/app/components/fileTree';
-
+import { FileTree } from '@/components/fileTree';
 // This component wraps the file tree and handles Sandpack state
 const FileTreeWrapper = ({ files, activeFile, onDelete, setActiveFile}) => {
   const { sandpack } = useSandpack();
@@ -78,6 +78,8 @@ const WebIDE = () => {
   };
 
   return (
+    <ProtectedRoute>
+
     <div className="h-screen flex flex-col bg-gray-900 text-white">
       <div className="p-4 border-b border-gray-700 flex justify-between items-center">
         <h1 className="text-xl font-bold">Web IDE</h1>
@@ -86,7 +88,7 @@ const WebIDE = () => {
           onClick={() => {
             // Trigger any custom run logic here
           }}
-        >
+          >
           <Play className="w-4 h-4" />
           Run
         </button>
@@ -101,14 +103,14 @@ const WebIDE = () => {
           visibleFiles: Object.keys(files),
           recompileMode: "immediate",
         }}
-      >
+        >
         <div className="flex-1 flex">
           <div className="w-64 bg-gray-800 border-r border-gray-700">
             <div className="p-4 border-b border-gray-700">
               <button
                 onClick={addNewFile}
                 className="w-full px-3 py-2 bg-gray-700 rounded hover:bg-gray-600 flex items-center gap-2"
-              >
+                >
                 <Plus className="w-4 h-4" />
                 New File
               </button>
@@ -119,7 +121,7 @@ const WebIDE = () => {
                 activeFile={activeFile}
                 setActiveFile={setActiveFile}
                 onDelete={deleteFile}
-              />
+                />
             </div>
           </div>
           
@@ -132,7 +134,7 @@ const WebIDE = () => {
                   showInlineErrors={true}
                   wrapContent={true}
                   closableTabs={true}
-                />
+                  />
               </div>
             </SandpackLayout>
           </div>
@@ -143,7 +145,7 @@ const WebIDE = () => {
               <button
                 className="w-full p-2 flex items-center justify-center gap-2 hover:bg-gray-800"
                 onClick={() => setShowConsole(!showConsole)}
-              >
+                >
                 <Terminal className="w-4 h-4" />
                 <span>Console</span>
                 <ChevronsUpDown className="w-4 h-4" />
@@ -158,6 +160,7 @@ const WebIDE = () => {
         </div>
       </SandpackProvider>
     </div>
+              </ProtectedRoute>
   );
 };
 
