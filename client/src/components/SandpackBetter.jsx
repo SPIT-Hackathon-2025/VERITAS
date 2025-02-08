@@ -7,11 +7,12 @@ import {
 import { SandpackFileExplorer } from "sandpack-file-explorer";
 import { Terminal, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
-import io from "socket.io-client";
-
-const socket = io(process.env.NEXT_PUBLIC_SERVER_URL);
+import { useSocket } from "@/app/context/socket";
 
 function SandpackBetter() {
+
+  const socket = useSocket();
+
   const [showConsole, setShowConsole] = useState(false);
   const { sandpack } = useSandpack();
   const { files, activeFile } = sandpack;
