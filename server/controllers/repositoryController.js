@@ -252,7 +252,7 @@ export const getUserRepoController = async (req, res) => {
         const repos = [...ownedRepos, ...collaboratedRepos];
 
         if (repos.length === 0) {
-            return res.status(404).json({ message: "No repositories found for this user" });
+            return res.status(204).json({ message: "No repositories found for this user" });
         }
 
         return res.status(200).json({
