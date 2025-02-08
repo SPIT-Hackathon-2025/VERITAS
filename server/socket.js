@@ -19,12 +19,13 @@ export const setupSocket = (server) => {
   io.on('connection', (socket) => {
     const user = JSON.parse(socket.handshake.query.user);
 
+    const repo = socket.handshake.query.repo
+
     console.log("Socket log: ", user);
 
     const userid = user.uid;
     const name = user.displayName;
     const email = user.email;
-    const repo = user.repo;
 
     if (userid) {
       // Store user details in the map
@@ -34,7 +35,7 @@ export const setupSocket = (server) => {
         email: email,
         userId: userid,
         repo,
-        currentFile: null // Initialize with no file
+        currentFile: 'main.jsx' // Initialize with no file
       });
 
       // Convert map to array of user objects for frontend

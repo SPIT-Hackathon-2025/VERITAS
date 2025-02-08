@@ -26,7 +26,7 @@ export const SocketProvider = ({ children }) => {
     if (!socket) {
       const newSocket = io(process.env.NEXT_PUBLIC_SERVER_URL, {
         withCredentials: true,
-        query: {user:{...user,repo}},
+        query: {user,repo},
         reconnection: true,
         transports: ['websocket', 'polling'],
       });

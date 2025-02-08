@@ -24,7 +24,7 @@ const CreateRepoModal = ({ onRepoCreated, user }) => {
     setError('');
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/repo/create-repo`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/v1/repo/create-repo`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -181,7 +181,7 @@ const RepositoryPage = () => {
     setError('');
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/repo/get-user-repos/${user.uid}`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/v1/repo/get-user-repos/${user.uid}`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch repositories');
