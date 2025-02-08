@@ -24,7 +24,7 @@ function SandpackBetter() {
       // Call your backend update function here
       updateCodeInBackend(activeFile, code);
     }
-  }, [code, activeFile]); 
+  }, [code]); 
 
   const updateCodeInBackend = (filePath, newCode) => {
     // Assuming you have a socket function here to send code updates
@@ -32,24 +32,20 @@ function SandpackBetter() {
     socket.emit("updateFile", { filePath, newCode });
   };
 
-  // useEffect(() => {
-  //     if(socket){
-  //         socket.on("fileUpdated", ({ filePath, newCode }) => {
-  //           // Update the file in the editor when another user makes changes
-  //           sandpack.updateFile(filePath, newCode);
-  //         });
-      
-  //         socket.on('getAllOnlineUsers',(payload)=>{
-  //           setOnlineUsers(payload.users)
-  //           console.log(payload);      
-  //         })
-      
-  //         // Cleanup the listener when the component is unmounted
-  //         return () => {
-  //           socket.off("fileUpdated");
-  //         }
-  //     }
-  // },[]);
+  useEffect(() => {
+    if (socket) {
+        socket.on('fileUpdated', ({ filePath, newCode }) => {
+            // Update the file in the editor when another user makes changes
+            sandpack.updateFile(filePath, newCode);
+        });
+
+        return () => {
+            socket.off("fileUpdated");
+            socket.off("getAllOnlineUsers"); // Clean up the 'getAllOnlineUsers' listener
+        };
+    }
+  }, [socket]);
+
 
   return (
     <div className="absolute inset-0 flex h-screen w-screen font-jetbrains">
