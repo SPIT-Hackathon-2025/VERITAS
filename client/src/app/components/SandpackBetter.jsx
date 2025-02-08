@@ -7,12 +7,27 @@ import {
 } from "@codesandbox/sandpack-react";
 import { SandpackFileExplorer } from "sandpack-file-explorer";
 import { Terminal, Plus } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import io from "socket.io-client";
+
+const socket = io(process.env.NEXT_PUBLIC_SERVER_URL);
 
 function SandpackBetter() {
   const [showConsole, setShowConsole] = useState(false);
   const { sandpack } = useSandpack();
   const { files, activeFile } = sandpack;
+
+  useEffect(() => {
+    if (code) {
+      // Call your backend update function here
+      updateCodeInBackend(activeFile, code);
+    }
+  }, [code, activeFile]); 
+
+  const updateCodeInBackend = (filePath, newCode) => {
+    // Assuming you have a socket function here to send code updates
+    socket.emit("updateFile", { filePath, newCode });
+  };
 
   const code = files[activeFile].code;
   console.log(code);
