@@ -5,7 +5,7 @@ dotenv.config();
 export const setupSocket = (server) => {
   const io = new Server(server, {
     cors: {
-      origin: [process.env.FRONTEND_URL, 'http://192.168.56.1/3000'],
+      origin: [process.env.FRONTEND_URL, 'http://192.168.56.1/3000','http://192.168.252.104/3001'],
       methods: ['GET', 'POST'],
       credentials: true,
     },
@@ -58,8 +58,7 @@ export const setupSocket = (server) => {
       socket.on('fileChange', ({ filePath }) => {
         const userInfo = userMap.get(userid);
 
-        console.log("Userinfo: ",userInfo);
-        
+        console.log("Userinfo: ",userInfo);        
         
         // First, notify users in the old file about cursor removal
         if (userInfo.currentFile && fileMap.has(userInfo.currentFile)) {

@@ -8,6 +8,7 @@ import { nightOwl } from "@codesandbox/sandpack-themes";
 import { useEffect, useState } from "react";
 import SandpackBetter from "@/components/SandpackBetter";
 import { useSearchParams } from "next/navigation"; // ✅ Use next/navigation instead of next/router
+import { SocketProvider } from "@/app/context/socket";
 
 // Utility function to transform repository data
 const transformRepoToFiles = (repo) => {
@@ -91,13 +92,15 @@ const MySandpackComponent = () => {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-[#011627]">
-      <SandpackProvider template="react-ts" files={files} theme="dark">
-        <SandpackThemeProvider theme={nightOwl}>
-          <SandpackBetter />
-        </SandpackThemeProvider>
-      </SandpackProvider>
-    </div>
+    <SocketProvider>
+      <div className="h-screen flex flex-col bg-[#011627]">
+        <SandpackProvider template="react-ts" files={files} theme="dark">
+          <SandpackThemeProvider theme={nightOwl}>
+            <SandpackBetter />
+          </SandpackThemeProvider>
+        </SandpackProvider>
+      </div>
+    </SocketProvider>
   );
 };
 
