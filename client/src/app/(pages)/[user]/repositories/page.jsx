@@ -3,9 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ChevronLeft, ChevronRight, Terminal, Book, GitFork, Menu, X, Home, Sparkles, Settings, MessageSquare, Plus, Search, Star } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Terminal, Book, GitFork, Menu, X, Home, Sparkles, Settings, MessageSquare, Plus, Search, Star, FolderIcon } from 'lucide-react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from '@/app/hooks/useAuth';
+import { useRouter } from 'next/navigation';
 
 const CreateRepoModal = ({ onRepoCreated, user }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -31,8 +32,8 @@ const CreateRepoModal = ({ onRepoCreated, user }) => {
         body: JSON.stringify({
           name: formData.name,
           description: formData.description,
-          private: formData.isPrivate,
-          user_id: user.uid
+          isprivate: formData.isPrivate,
+          id: user.uid
         })
       });
 
@@ -109,42 +110,6 @@ const CreateRepoModal = ({ onRepoCreated, user }) => {
   );
 };
 
-const RepositoryCard = ({ repo }) => (
-  <div className="p-6 rounded-lg bg-gray-800/50 border border-gray-700 hover:border-blue-500/50 transition-all backdrop-blur-sm">
-    <div className="flex items-center justify-between mb-3">
-      <div className="flex items-center space-x-3">
-        <Book className={`h-5 w-5 ${repo.private ? 'text-purple-500' : 'text-blue-500'}`} />
-        <h3 className="text-white hover:text-blue-400 font-medium text-lg">{repo.name}</h3>
-      </div>
-      <span className={`text-xs px-3 py-1 rounded-full ${repo.private ? 'bg-purple-500/20 text-purple-300' : 'bg-blue-500/20 text-blue-300'}`}>
-        {repo.private ? 'Private' : 'Public'}
-      </span>
-    </div>
-    <p className="text-gray-400 text-sm mb-4">{repo.description}</p>
-    <div className="flex items-center space-x-4 text-sm text-gray-400">
-      {repo.language && (
-        <div className="flex items-center">
-          <div className="w-3 h-3 rounded-full mr-1" style={{ backgroundColor: repo.languageColor }} />
-          {repo.language}
-        </div>
-      )}
-      {repo.stars && (
-        <div className="flex items-center">
-          <Star className="h-4 w-4 mr-1" />
-          {repo.stars}
-        </div>
-      )}
-      {repo.forks && (
-        <div className="flex items-center">
-          <GitFork className="h-4 w-4 mr-1" />``
-          {repo.forks}
-        </div>
-      )}
-      <span>Updated {repo.lastUpdated}</span>
-    </div>
-  </div>
-);
-
 const EmptyState = () => (
   <div className="text-center py-12">
     <Book className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -152,6 +117,54 @@ const EmptyState = () => (
     <p className="text-gray-400 mb-6">Create your first repository to get started</p>
   </div>
 );
+const RepositoryCard = ({ repo, user }) => {
+  const router = useRouter();
+  const folderCount = repo.mainFolders?.length || 0;
+  const fileCount = repo.mainFolders?.reduce((acc, folder) => 
+    acc + (folder.children?.filter(child => child.isFile)?.length || 0), 0
+  ) || 0;
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    }).format(date);
+  };
+
+  const handleNavigate = () => {
+    router.push(`/${user.name}/${repo.name}/code-editor`);
+  };
+
+  return (
+    <div 
+      className="p-6 rounded-lg bg-gray-800/50 border border-gray-700 hover:border-blue-500/50 transition-all backdrop-blur-sm cursor-pointer"
+      onClick={handleNavigate}
+    >
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center space-x-3">
+          <Book className={`h-5 w-5 ${repo.isPrivate ? 'text-purple-500' : 'text-blue-500'}`} />
+          <h3 className="text-white hover:text-blue-400 font-medium text-lg">{repo.name}</h3>
+        </div>
+        <span className={`text-xs px-3 py-1 rounded-full ${repo.isPrivate ? 'bg-purple-500/20 text-purple-300' : 'bg-blue-500/20 text-blue-300'}`}>
+          {repo.isPrivate ? 'Private' : 'Public'}
+        </span>
+      </div>
+      <p className="text-gray-400 text-sm mb-4">{repo.description}</p>
+      <div className="flex items-center space-x-4 text-sm text-gray-400">
+        <div className="flex items-center">
+          <FolderIcon className="h-4 w-4 mr-1" />
+          {folderCount} {folderCount === 1 ? 'folder' : 'folders'}
+        </div>
+        <div className="flex items-center">
+          <Terminal className="h-4 w-4 mr-1" />
+          {fileCount} {fileCount === 1 ? 'file' : 'files'}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const RepositoryPage = () => {
   const { user, loading } = useAuth();
@@ -174,9 +187,23 @@ const RepositoryPage = () => {
       }
 
       const data = await response.json();
-      setRepositories(data);
+console.log(data);
+
+// Ensure data.repos is an array
+const reposArray = Array.isArray(data.repos) ? data.repos : [];
+
+// Set repositories with a fallback _id if missing
+setRepositories(
+  reposArray.map(repo => ({
+    ...repo,
+    _id: repo._id || Math.random().toString(36).substr(2, 9),
+  }))
+);
+  
     } catch (err) {
+      console.error('Error fetching repositories:', err);
       setError('Failed to load repositories. Please try again later.');
+      setRepositories([]); // Set empty array on error
     } finally {
       setIsLoading(false);
     }
@@ -188,10 +215,12 @@ const RepositoryPage = () => {
     }
   }, [user]);
 
-  const filteredRepos = repositories.filter(repo => 
-    repo.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    repo.description?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredRepos = searchQuery
+    ? repositories.filter(repo => 
+        repo?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        repo?.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : repositories;
 
   if (loading) {
     return (
@@ -240,10 +269,14 @@ const RepositoryPage = () => {
         <EmptyState />
       ) : (
         <div className="grid gap-4">
-          {filteredRepos.map((repo, index) => (
-            <RepositoryCard key={index} repo={repo} />
+          {Array.isArray(filteredRepos) && filteredRepos.map((repo) => (
+            <RepositoryCard 
+              key={repo._id || `repo-${Math.random().toString(36).substr(2, 9)}`} 
+                  repo={repo} 
+                  user={user}
+            />
           ))}
-          {filteredRepos.length === 0 && (
+          {filteredRepos.length === 0 && searchQuery && (
             <div className="text-center py-12 text-gray-400">
               No repositories match your search
             </div>
