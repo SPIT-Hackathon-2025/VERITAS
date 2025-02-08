@@ -61,6 +61,7 @@ function SandpackBetter() {
       });
 
       socket.on('removeCursor', ({ userId }) => {
+        console.log(userId, "removed");        
         setCursors(prev => {
           const newCursors = { ...prev };
           delete newCursors[userId];

@@ -50,25 +50,35 @@ export const setupSocket = (server) => {
 
       // Handle file updates
       socket.on('updateFile', ({ filePath, newCode }) => {
-        console.log("File is updated ", newCode);
+        // console.log("File is updated ", newCode);
         io.emit('fileUpdated', { filePath, newCode });
       });
 
       // Track file changes
       socket.on('fileChange', ({ filePath }) => {
         const userInfo = userMap.get(userid);
+
+        console.log("Userinfo: ",userInfo);
+        
         
         // First, notify users in the old file about cursor removal
         if (userInfo.currentFile && fileMap.has(userInfo.currentFile)) {
           const currentFileUsers = fileMap.get(userInfo.currentFile);
+
+          console.log("Users from file: ",currentFileUsers);
+          
           // Get socket IDs for all users in the old file
           const oldFileSockets = Array.from(currentFileUsers)
             .map(uid => userMap.get(uid)?.socketId)
             .filter(Boolean);
+
+         console.log("Sockets to notify: ",oldFileSockets);
+         
       
           // Notify users in old file about cursor removal
           oldFileSockets.forEach(socketId => {
-            io.to(socketId).emit('removeCursor', userid);
+            const userId = userid
+            io.to(socketId).emit('removeCursor', {userId});
           });
       
           // Then remove user from old file's user list
@@ -89,13 +99,13 @@ export const setupSocket = (server) => {
         fileMap.get(filePath).add(userid);
       
         // Log for debugging
-        console.log(`User ${name} switched to file: ${filePath}`);
-        console.log(`Users in file ${filePath}:`, Array.from(fileMap.get(filePath)));
+        // console.log(`User ${name} switched to file: ${filePath}`);
+        // console.log(`Users in file ${filePath}:`, Array.from(fileMap.get(filePath)));
       });
 
       // Handle cursor movements
       socket.on('cursorMove', ({ position, filePath }) => {
-        console.log("Cursor moved to : ", position, "in file:", filePath);
+        // console.log("Cursor moved to : ", position, "in file:", filePath);
         
         if (!filePath || !fileMap.has(filePath)) return;
 
@@ -116,33 +126,6 @@ export const setupSocket = (server) => {
           });
         });
       });
-
-    //   socket.on('removeCursor', ({ filePath }) => {
-        
-    //     if (!filePath || !fileMap.has(filePath)) return;
-      
-    //     // Get all users in the current file
-    //     const fileUsers = fileMap.get(filePath);
-
-    //     console.log(fileUsers);        
-        
-    //     // Get socket IDs for all users in the file
-    //     const socketsInFile = Array.from(fileUsers)
-    //       .map(uid => userMap.get(uid)?.socketId)
-    //       .filter(Boolean); // Remove any undefined socket IDs
-
-    //     console.log("Sockets: ",socketsInFile);
-      
-    //     // Emit removeCursor event to all users in the file
-    //     socketsInFile.forEach(socketId => {
-    //       io.to(socketId).emit('removeCursor', {
-    //         userId: userid,
-    //         filePath
-    //       });
-    //     });
-      
-    //     console.log(`Cursor removed for user ${name} in file ${filePath}`);
-    //   });
       
 
     } else {
