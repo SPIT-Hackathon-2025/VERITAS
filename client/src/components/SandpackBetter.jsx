@@ -27,15 +27,14 @@ const OnlineUserBadge = ({ name, email }) => (
 );
 
 function SandpackBetter() {
-  const {socket,onlineUsers} = useSocket();
+  const socket = useSocket();
   const [showConsole, setShowConsole] = useState(false);
   const [showOnlineUsers, setShowOnlineUsers] = useState(true);
   const { sandpack } = useSandpack();
   const { files, activeFile } = sandpack;
   const code = files[activeFile].code;
   const {users} = useOnlineUserStore();
-
-  console.log("online users: ",users);  
+  
 
   useEffect(() => {
     if (code) {
@@ -58,7 +57,11 @@ function SandpackBetter() {
   }, [socket]);
 
   const updateCodeInBackend = (filePath, newCode) => {
+    console.log('here');
+    
     if (socket) {
+      console.log(newCode,filePath);
+      
       socket.emit("updateFile", { filePath, newCode });
     }
   };
