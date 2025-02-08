@@ -1,11 +1,16 @@
 "use client";
 import { useEffect, useState } from "react";
 import { auth, onAuthStateChanged, signOut } from "@/app/hooks/firebase";
+import useAuthUserStore from "../context/authUserStore";
 
 export const useAuth = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-
+  const {authUser,setAuthUser} = useAuthUserStore();
+  useEffect(() => {
+    console.log('authUser',authUser);
+    
+  }, [authUser]);
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
@@ -16,6 +21,7 @@ export const useAuth = () => {
           photoURL: currentUser.photoURL,
         };
         setUser(userData);
+        setAuthUser(userData);
         localStorage.setItem("user", JSON.stringify(userData)); // Store minimal data
       } else {
         setUser(null);
