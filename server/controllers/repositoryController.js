@@ -5,14 +5,14 @@ import { userModel } from "../models/userModel.js";
 
 export const createRepositoryController = async (request, response) => {
     try {
-        const { name, email, description, isPrivate, collaborators } = request.body;
-        if (!name || !email) {
+        const { name, id, description, isPrivate, collaborators } = request.body;
+        if (!name || !id) {
             return response.status(400).json({
                 success: false,
-                error: 'Repository name and owner email are required',
+                error: 'Repository name and owner id are required',
             });
         }
-        const owner = await userModel.findOne({ email });
+        const owner = await userModel.findOne({ _id: id });
         if (!owner) {
             return response.status(404).json({
                 success: false,
