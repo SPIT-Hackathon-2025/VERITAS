@@ -42,3 +42,7 @@
   font-weight: 400;
   font-size: 16px;
 }
+
+.sp-c-kwibBT sp-preview-actions {
+  display: none;
+}

@@ -10,12 +10,12 @@ const jetBrainsMono = JetBrains_Mono({ subsets: ["latin"] })
 export default function RootLayout({ children }) {
   const pathname = usePathname()
 
-  const hiddenRoutes = ["/auth/login", "/auth/register"]
+  const hiddenRoutes = ["/"]
 
   return (
     <html lang="en" className="dark">
       <body className="bg-gray-950 text-gray-100">
-        {!hiddenRoutes.includes(pathname) && <Navbar className={jetBrainsMono.className} />}
+        {hiddenRoutes.includes(pathname) && <Navbar className={jetBrainsMono.className} />}
         {children}
       </body>
     </html>
