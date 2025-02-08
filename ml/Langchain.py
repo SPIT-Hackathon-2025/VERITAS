@@ -114,7 +114,7 @@ class GroqRAGSystem:
         
         # Store full item details as metadata
         self.vector_store.add_texts(texts, metadatas=inventory)
-        print("Inventory items added successfully.")
+        print("files added successfully.")
 
     def get_inventory(self, query: str, k_documents: int = 5) -> List[Dict[str, Any]]:
         """
