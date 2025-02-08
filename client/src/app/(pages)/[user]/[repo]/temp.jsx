@@ -1,20 +1,38 @@
-"use client"
-import React, { useState } from 'react';
+"use client";
+import React, { useState } from "react";
 import {
   SandpackProvider,
   SandpackLayout,
   SandpackCodeEditor,
   SandpackPreview,
   SandpackConsole,
-  useActiveCode,
   useSandpack,
 } from "@codesandbox/sandpack-react";
-import { ChevronsUpDown, Terminal, Play, Plus } from 'lucide-react';
-import { FileTree } from '@/app/components/fileTree';
+import { ChevronsUpDown, Terminal, Play, Plus } from "lucide-react";
+import { FileTree } from "@/app/components/fileTree";
+
+// This component wraps the file tree and handles Sandpack state
+const FileTreeWrapper = ({ files, activeFile, onDelete, setActiveFile }) => {
+  const { sandpack } = useSandpack();
+
+  const handleFileClick = (newFile) => {
+    sandpack.setActiveFile(newFile);
+    setActiveFile(newFile);
+  };
+
+  return (
+    <FileTree
+      files={files}
+      activeFile={activeFile}
+      onFileClick={handleFileClick}
+      onDelete={onDelete}
+    />
+  );
+};
 
 const WebIDE = () => {
   const [files, setFiles] = useState({
-    "/src/App.js": `export default function App() {
+    "/src/index.js": `export default function App() {
   return <h1>Hello World</h1>
 }`,
     "/src/components/Button.js": `export default function Button({ children }) {
@@ -28,21 +46,17 @@ const WebIDE = () => {
   padding: 1rem;
 }`,
   });
-  
-  const [activeFile, setActiveFile] = useState("");
+
+  const [activeFile, setActiveFile] = useState("/src/App.js");
   const [showConsole, setShowConsole] = useState(false);
 
-  const handleFileChange = (newFile) => {
-    setActiveFile(newFile);
-  };
-  
   const addNewFile = () => {
     const path = prompt("Enter file path (e.g., src/components/NewFile.js):");
     if (path) {
-      const fullPath = path.startsWith('/') ? path : `/${path}`;
-      setFiles(prev => ({
+      const fullPath = path.startsWith("/") ? path : `/${path}`;
+      setFiles((prev) => ({
         ...prev,
-        [fullPath]: ""
+        [fullPath]: "",
       }));
       setActiveFile(fullPath);
     }
@@ -53,11 +67,11 @@ const WebIDE = () => {
       alert("Cannot delete the last file");
       return;
     }
-    
+
     const newFiles = { ...files };
     delete newFiles[filename];
     setFiles(newFiles);
-    
+
     if (activeFile === filename) {
       setActiveFile(Object.keys(newFiles)[0]);
     }
@@ -67,7 +81,7 @@ const WebIDE = () => {
     <div className="h-screen flex flex-col bg-gray-900 text-white">
       <div className="p-4 border-b border-gray-700 flex justify-between items-center">
         <h1 className="text-xl font-bold">Web IDE</h1>
-        <button 
+        <button
           className="px-3 py-1 bg-blue-600 rounded hover:bg-blue-700 flex items-center gap-2"
           onClick={() => {
             // Trigger any custom run logic here
@@ -77,7 +91,7 @@ const WebIDE = () => {
           Run
         </button>
       </div>
-      
+
       <SandpackProvider
         files={files}
         theme="dark"
@@ -86,7 +100,6 @@ const WebIDE = () => {
           activeFile: activeFile,
           visibleFiles: Object.keys(files),
           recompileMode: "immediate",
-          recompileDelay: 300,
         }}
       >
         <div className="flex-1 flex">
@@ -101,47 +114,45 @@ const WebIDE = () => {
               </button>
             </div>
             <div className="p-2">
-              <FileTree
+              <FileTreeWrapper
                 files={files}
-                activeFile={activeFile}
-                onFileClick={handleFileChange}
+                // activeFile={activeFile}
+                setActiveFile={setActiveFile}
                 onDelete={deleteFile}
               />
             </div>
           </div>
-          
+
           <div className="flex-1 flex flex-col">
             <SandpackLayout>
               <div className="flex-1">
-                <SandpackCodeEditor 
+                <SandpackCodeEditor
                   showTabs
                   showLineNumbers={true}
                   showInlineErrors={true}
                   wrapContent={true}
                   closableTabs={true}
-                  activeFile={activeFile}
                 />
               </div>
-            </SandpackLayout>
-          </div>
-          
-          <div className="w-1/2 border-l border-gray-700 flex flex-col">
-            <SandpackPreview />
-            <div className="border-t border-gray-700">
-              <button
-                className="w-full p-2 flex items-center justify-center gap-2 hover:bg-gray-800"
-                onClick={() => setShowConsole(!showConsole)}
-              >
-                <Terminal className="w-4 h-4" />
-                <span>Console</span>
-                <ChevronsUpDown className="w-4 h-4" />
-              </button>
-              {showConsole && (
-                <div className="h-48 overflow-auto">
-                  <SandpackConsole />
+              <div className="w-1/2 border-l border-gray-700 flex flex-col">
+                <SandpackPreview />
+                <div className="border-t border-gray-700">
+                  <button
+                    className="w-full p-2 flex items-center justify-center gap-2 hover:bg-gray-800"
+                    onClick={() => setShowConsole(!showConsole)}
+                  >
+                    <Terminal className="w-4 h-4" />
+                    <span>Console</span>
+                    <ChevronsUpDown className="w-4 h-4" />
+                  </button>
+                  {showConsole && (
+                    <div className="h-48 overflow-auto">
+                      <SandpackConsole />
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              </div>
+            </SandpackLayout>
           </div>
         </div>
       </SandpackProvider>
