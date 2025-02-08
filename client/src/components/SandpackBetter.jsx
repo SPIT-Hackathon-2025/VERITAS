@@ -49,9 +49,11 @@ function SandpackBetter() {
 
   useEffect(() => {
     if (socket) {
-      socket.on('fileUpdated', ({ filePath, newCode }) => {
-        console.log("File is updated", JSON.stringify(newCode));
-        sandpack.updateFile(filePath, newCode);
+      socket.on('fileUpdated', ({ filePath, newCode, repo }) => {
+        // Only update if the file update is for our repo
+        if (repo === socket.handshake.query.repo) {
+          sandpack.updateFile(filePath, newCode);
+        }
       });
 
       socket.on('cursorMove', ({ userId, position, name }) => {
@@ -62,7 +64,6 @@ function SandpackBetter() {
       });
 
       socket.on('removeCursor', ({ userId }) => {
-        console.log(userId, "removed");        
         setCursors(prev => {
           const newCursors = { ...prev };
           delete newCursors[userId];
@@ -70,10 +71,18 @@ function SandpackBetter() {
         });
       });
 
+      socket.on('getAllOnlineUsers', ({ users, repo }) => {
+        // Only update users if the update is for our repo
+        if (repo === socket.handshake.query.repo) {
+          useOnlineUserStore.setState({ users });
+        }
+      });
+
       return () => {
         socket.off("fileUpdated");
         socket.off("getAllOnlineUsers");
-        socket.off("cursorMove");  // Add this line
+        socket.off("cursorMove");
+        socket.off("removeCursor");
       };
     }
   }, [socket]);
@@ -85,6 +94,7 @@ function SandpackBetter() {
       setCursors({});
     }
   }, [activeFile, socket]);
+  
 
   const updateCodeInBackend = (filePath, newCode) => {
     console.log('here');
