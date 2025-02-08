@@ -1,7 +1,22 @@
-import React, { useState } from 'react';
-import { Trash2, Folder, File, ChevronRight, ChevronDown } from 'lucide-react';
+import React, { useState } from "react";
+import { Trash2, Folder, File, ChevronRight, ChevronDown } from "lucide-react";
+import { useSandpack } from "@codesandbox/sandpack-react";
 
-const FileTreeItem = ({ name, isFolder, isOpen, onClick, onDelete, depth = 0, isActive }) => {
+const FileTreeItem = ({
+  name,
+  isFolder,
+  isOpen,
+  onClick,
+  onDelete,
+  depth = 0,
+  isActive,
+}) => {
+  
+
+  // const handleFileClick = (newFile) => {
+  //   sandpack.setActiveFile(newFile);
+  //   setActiveFile(newFile);
+  // };
   const handleClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -11,17 +26,25 @@ const FileTreeItem = ({ name, isFolder, isOpen, onClick, onDelete, depth = 0, is
   return (
     <div
       className={`flex items-center px-2 py-1 cursor-pointer hover:bg-gray-700 group ${
-        isActive ? 'bg-blue-600' : ''
+        isActive ? "bg-blue-600" : ""
       }`}
       onClick={handleClick}
-      style={{ paddingLeft: `${depth * 12 + 8}px `}}
+      style={{ paddingLeft: `${depth * 12 + 8}px ` }}
     >
       <span className="mr-2">
         {isFolder ? (
-          isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />
+          isOpen ? (
+            <ChevronDown className="w-4 h-4" />
+          ) : (
+            <ChevronRight className="w-4 h-4" />
+          )
         ) : null}
       </span>
-      {isFolder ? <Folder className="w-4 h-4 mr-2" /> : <File className="w-4 h-4 mr-2" />}
+      {isFolder ? (
+        <Folder className="w-4 h-4 mr-2" />
+      ) : (
+        <File className="w-4 h-4 mr-2" />
+      )}
       <span className="flex-1">{name}</span>
       {!isFolder && onDelete && (
         <button
@@ -39,26 +62,27 @@ const FileTreeItem = ({ name, isFolder, isOpen, onClick, onDelete, depth = 0, is
 };
 
 export const FileTree = ({ files, activeFile, onFileClick, onDelete }) => {
-  const [openFolders, setOpenFolders] = useState(new Set(['/']));
-
+  const [openFolders, setOpenFolders] = useState(new Set(["/"]));
+  const { sandpack } = useSandpack();
   // Build file system tree
   const fileSystem = {};
-  Object.keys(files).forEach(path => {
-    const parts = path.split('/').filter(Boolean);
+  Object.keys(files).forEach((path) => {
+    const parts = path.split("/").filter(Boolean);
     let current = fileSystem;
     parts.forEach((part, i) => {
       if (i === parts.length - 1) {
-        current[part] = { type: 'file', path };
+        current[part] = { type: "file", path };
       } else {
-        current[part] = current[part] || { type: 'folder', children: {} };
+        current[part] = current[part] || { type: "folder", children: {} };
         current = current[part].children;
       }
     });
   });
 
   const handleFileClick = (path) => {
-    console.log('File clicked:', path); // Debug log
-    if (typeof onFileClick === 'function') {
+    console.log("File clicked:", path); // Debug log
+    sandpack.setActiveFile(path);
+    if (typeof onFileClick === "function") {
       onFileClick(path);
     }
   };
@@ -73,12 +97,12 @@ export const FileTree = ({ files, activeFile, onFileClick, onDelete }) => {
     setOpenFolders(newOpenFolders);
   };
 
-  const renderTree = (tree, path = '', depth = 0) => {
+  const renderTree = (tree, path = "", depth = 0) => {
     return Object.entries(tree).map(([name, node]) => {
       const fullPath = `${path}/${name}`;
       const isOpen = openFolders.has(fullPath);
 
-      if (node.type === 'folder') {
+      if (node.type === "folder") {
         return (
           <div key={fullPath}>
             <FileTreeItem
@@ -89,9 +113,7 @@ export const FileTree = ({ files, activeFile, onFileClick, onDelete }) => {
               onClick={() => handleFolderClick(fullPath)}
             />
             {isOpen && (
-              <div>
-                {renderTree(node.children, fullPath, depth + 1)}
-              </div>
+              <div>{renderTree(node.children, fullPath, depth + 1)}</div>
             )}
           </div>
         );
@@ -112,12 +134,8 @@ export const FileTree = ({ files, activeFile, onFileClick, onDelete }) => {
   };
 
   // Debug logs
-  console.log('Current activeFile:', activeFile);
-  console.log('Available files:', Object.keys(files));
+  console.log("Current activeFile:", activeFile);
+  console.log("Available files:", Object.keys(files));
 
-  return (
-    <div className="text-sm text-gray-200">
-      {renderTree(fileSystem)}
-    </div>
-  );
+  return <div className="text-sm text-gray-200">{renderTree(fileSystem)}</div>;
 };
