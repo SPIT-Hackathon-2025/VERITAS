@@ -14,7 +14,7 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 # @app.route("/route_query", methods=["POST"])
 # def route_query():
 #     try:
-#         # Extract data from request
+#         # Extract data from request+
 #         data = request.json
 #         query = data.get("query")
 
