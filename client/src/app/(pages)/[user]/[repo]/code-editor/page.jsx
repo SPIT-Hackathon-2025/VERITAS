@@ -49,10 +49,10 @@ const MySandpackComponent = () => {
       setError(null);
 
       try {
-        const response = await fetch(`${BACKEND_URL}/api/v1/get-repo/${repoKey}`);
+        const response = await fetch(`${BACKEND_URL}/api/v1/repo/get-repo/${repoKey}`);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
         const data = await response.json();
+
         if (data.repo) {
           setFiles(transformRepoToFiles(data.repo));
         } else {
