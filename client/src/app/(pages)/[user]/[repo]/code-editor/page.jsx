@@ -35,7 +35,7 @@ const transformRepoToFiles = (repo) => {
 const MySandpackComponent = () => {
   const searchParams = useSearchParams(); // ✅ Replaces useRouter()
   const repoKey = searchParams.get("repoId"); // ✅ Get repoKey from URL query
-  
+
   const [files, setFiles] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -92,15 +92,15 @@ const MySandpackComponent = () => {
   }
 
   return (
-    <SocketProvider>
-      <div className="h-screen flex flex-col bg-[#011627]">
-        <SandpackProvider template="react-ts" files={files} theme="dark">
-          <SandpackThemeProvider theme={nightOwl}>
-            <SandpackBetter />
-          </SandpackThemeProvider>
-        </SandpackProvider>
-      </div>
-    </SocketProvider>
+    // <SocketProvider>
+    <div className="h-screen flex flex-col bg-[#011627]">
+      <SandpackProvider template="react-ts" files={files} theme="dark">
+        <SandpackThemeProvider theme={nightOwl}>
+          <SandpackBetter />
+        </SandpackThemeProvider>
+      </SandpackProvider>
+    </div>
+    // </SocketProvider>
   );
 };
 
