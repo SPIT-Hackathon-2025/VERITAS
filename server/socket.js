@@ -11,25 +11,27 @@ export const setupSocket = (server) => {
     },
   });
 
-  // Modified to store user objects instead of just socket IDs
+  // Store user details with their current file
   const userMap = new Map();
+  // Store file to users mapping
+  const fileMap = new Map();
 
   io.on('connection', (socket) => {
     const user = JSON.parse(socket.handshake.query.user);
+    console.log("Socket log: ", user);
 
-    console.log("Socket log: ",user);   
-    
     const userid = user.uid;
     const name = user.displayName;
     const email = user.email;
-    
+
     if (userid) {
       // Store user details in the map
       userMap.set(userid, {
         socketId: socket.id,
         name: name,
         email: email,
-        userId: userid
+        userId: userid,
+        currentFile: null // Initialize with no file
       });
 
       // Convert map to array of user objects for frontend
@@ -51,24 +53,82 @@ export const setupSocket = (server) => {
         console.log("File is updated ", newCode);
         io.emit('fileUpdated', { filePath, newCode });
       });
+
+      // Track file changes
+      socket.on('fileChange', ({ filePath }) => {
+        const userInfo = userMap.get(userid);
+        
+        // Remove user from old file's user list
+        if (userInfo.currentFile && fileMap.has(userInfo.currentFile)) {
+          const currentFileUsers = fileMap.get(userInfo.currentFile);
+          currentFileUsers.delete(userid);
+          if (currentFileUsers.size === 0) {
+            fileMap.delete(userInfo.currentFile);
+          }
+        }
+
+        // Update user's current file
+        userInfo.currentFile = filePath;
+        userMap.set(userid, userInfo);
+
+        // Add user to new file's user list
+        if (!fileMap.has(filePath)) {
+          fileMap.set(filePath, new Set());
+        }
+        fileMap.get(filePath).add(userid);
+
+        // Log for debugging
+        console.log(`User ${name} switched to file: ${filePath}`);
+        console.log(`Users in file ${filePath}:`, Array.from(fileMap.get(filePath)));
+      });
+
+      // Handle cursor movements
+      socket.on('cursorMove', ({ position, filePath }) => {
+        console.log("Cursor moved to : ", position, "in file:", filePath);
+        
+        if (!filePath || !fileMap.has(filePath)) return;
+
+        // Get all socket IDs for users in the same file
+        const fileUsers = fileMap.get(filePath);
+        console.log("File users: ",fileUsers);
+
+        console.log("User map: ", userMap);
+        
+        
+        const socketsInFile = Array.from(fileUsers)
+          .map(uid => userMap.get(uid)?.socketId)
+           // Exclude sender
+        console.log("Sockets : ",socketsInFile);
+        // Emit cursor position only to users in the same file
+        socketsInFile.forEach(socketId => {
+          io.to(socketId).emit('cursorMove', {
+            userId: userid,
+            position,
+            name: name,
+            filePath
+          });
+        });
+      });
     } else {
       console.log("User id not provided");
     }
 
-    socket.on('cursorMove', ({ position }) => {
-        // Broadcast cursor position to all other clients
-        console.log("Cursor moved to : ",position);        
-        socket.emit('cursorMove', {
-          userId: userid,
-          position,
-          name: name
-        });
-      });
-
     socket.on('disconnect', () => {
       if (userid) {
-        userMap.delete(userid);
+        const userInfo = userMap.get(userid);
         
+        // Remove user from file mapping
+        if (userInfo.currentFile && fileMap.has(userInfo.currentFile)) {
+          const fileUsers = fileMap.get(userInfo.currentFile);
+          fileUsers.delete(userid);
+          if (fileUsers.size === 0) {
+            fileMap.delete(userInfo.currentFile);
+          }
+        }
+
+        // Remove user from user mapping
+        userMap.delete(userid);
+
         // Send updated user list after disconnect
         const remainingUsers = Array.from(userMap.values()).map(user => ({
           userId: user.userId,

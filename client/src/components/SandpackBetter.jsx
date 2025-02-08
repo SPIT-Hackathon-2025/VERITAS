@@ -60,9 +60,16 @@ function SandpackBetter() {
       return () => {
         socket.off("fileUpdated");
         socket.off("getAllOnlineUsers");
+        socket.off("cursorMove");  // Add this line
       };
     }
   }, [socket]);
+
+  useEffect(() => {
+    if (socket && activeFile) {
+      socket.emit('fileChange', { filePath: activeFile });
+    }
+  }, [activeFile, socket]);
 
   const updateCodeInBackend = (filePath, newCode) => {
     console.log('here');
@@ -76,7 +83,7 @@ function SandpackBetter() {
 
   const handleCursorMove = (event) => {
     // if (!socket || !editorRef.current) return;
-
+  
     const editor = editorRef.current;
     const rect = editor.getBoundingClientRect();
   
@@ -84,16 +91,19 @@ function SandpackBetter() {
       x: event.clientX - rect.left,
       y: event.clientY - rect.top
     };
-
+  
     console.log(position);    
-
-    socket.emit('cursorMove', { position });
+  
+    socket.emit('cursorMove', { 
+      position,
+      filePath: activeFile  // Add this line
+    });
   };
 
   const getUserColor = (userId) => {
     const colors = [
       '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4',
-      '#FFEEAD', '#D4A5A5', '#9B59B6', '#3498DB'
+      '#FFEEAD', '#D4A5A5', '#9B59B6', '#3498DB','#fff'
     ];
     return colors[parseInt(userId, 16) % colors.length];
   };
