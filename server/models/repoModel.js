@@ -4,7 +4,6 @@ const repoSchema = new mongoose.Schema({
     name: {
         type: String,
         required: true,
-        unique: true
     }, // Repository name
     owner: {
         type: mongoose.Schema.Types.ObjectId,
@@ -27,6 +26,16 @@ const repoSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "files"
     }], // Root-level folders
+    previousCommit: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "repos",
+        default: null
+    },
+    nextCommit: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "repos",
+        default: null
+    },
     createdAt: {
         type: Date,
         default: Date.now()

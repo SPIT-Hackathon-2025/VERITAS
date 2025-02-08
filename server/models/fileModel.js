@@ -8,7 +8,7 @@ const fileSchema = new mongoose.Schema({
     }, // Repository reference
     parent: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "File",
+        ref: "files",
         default: null
     }, // Parent folder (null if root)
     name: {
@@ -25,7 +25,7 @@ const fileSchema = new mongoose.Schema({
     }, // Only for files
     children: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: "File"
+        ref: "files"
     }], // Only for folders
     hash: {
         type: String,
@@ -41,4 +41,4 @@ const fileSchema = new mongoose.Schema({
     },
 }, { timestamps: true });
 
-export const FileModel = mongoose.model("files", fileSchema);
+export const fileModel = mongoose.model("files", fileSchema);
