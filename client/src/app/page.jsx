@@ -2,7 +2,6 @@
 
 import { HeroSection } from "@/components/HeroSection"
 import { FeaturesSection } from "@/components/FeaturesSection"
-import { SocialProofSection } from "@/components/SocialProofSection"
 import { Footer } from "@/components/Footer"
 import { FeedbackSection } from "@/components/SocialProofSection"
 import { SocketProvider } from "./context/socket"
