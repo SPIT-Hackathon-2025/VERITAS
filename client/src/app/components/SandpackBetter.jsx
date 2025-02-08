@@ -15,7 +15,8 @@ function SandpackBetter() {
   const [showConsole, setShowConsole] = useState(false);
   const { sandpack } = useSandpack();
   const { files, activeFile } = sandpack;
-
+  const code = files[activeFile].code;
+  
   useEffect(() => {
     if (code) {
       // Call your backend update function here
@@ -28,7 +29,17 @@ function SandpackBetter() {
     socket.emit("updateFile", { filePath, newCode });
   };
 
-  const code = files[activeFile].code;
+  useEffect(() => {
+    socket.on("fileUpdated", ({ filePath, newCode }) => {
+    // Update the file in the editor when another user makes changes
+    sandpack.updateFile(filePath, newCode);
+    });
+
+    // Cleanup the listener when the component is unmounted
+    return () => {
+    socket.off("fileUpdated");
+    };
+  }, [sandpack]);
 
   return (
     <div className="absolute inset-0 flex h-screen w-screen font-jetbrains">
