@@ -65,7 +65,11 @@ function SandpackBetter() {
   }, [socket]);
 
   const updateCodeInBackend = (filePath, newCode) => {
+    console.log('here');
+    
     if (socket) {
+      console.log(newCode,filePath);
+      
       socket.emit("updateFile", { filePath, newCode });
     }
   };
