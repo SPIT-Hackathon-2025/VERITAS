@@ -1,17 +1,21 @@
 import { fileModel } from "../models/fileModel.js";
 import { repoModel } from "../models/repoModel.js";
 import { userModel } from "../models/userModel.js";
+import sendMail from "../utils/sendMail.js";
 
 
 export const createRepositoryController = async (request, response) => {
     try {
         const { name, id, description, isPrivate, collaborators } = request.body;
+
         if (!name || !id) {
             return response.status(400).json({
                 success: false,
                 error: 'Repository name and owner id are required',
             });
         }
+
+        // Find the owner of the repository
         const owner = await userModel.findOne({ _id: id });
         if (!owner) {
             return response.status(404).json({
@@ -19,9 +23,35 @@ export const createRepositoryController = async (request, response) => {
                 message: "User not found"
             });
         }
-        let collaboratorsId = [];
 
+        // Create the repository first
+        const newRepo = await repoModel.create({
+            name,
+            owner: owner._id,
+            description,
+            isPrivate,
+            collaborators: [] // Initialize with an empty array for collaborators
+        });
+
+        // Create the default README.md file
+        const readmeFile = await fileModel.create({
+            repo: newRepo._id,            // Link the file to the new repository
+            parent: null,                  // Root-level file, so parent is null
+            name: 'README.md',             // File name
+            isFile: true,                  // Indicating that it's a file
+            content: '',                   // Empty content for now
+            path: `README.md`,             // Path in the repo
+            children: []                   // No children since it's a file
+        });
+
+        // Add the README.md file to the repository's main folders
+        newRepo.mainFolders = [readmeFile._id];  // Add the file to the repository's root
+        await newRepo.save();
+
+        // Now handle collaborators (send emails and add to collaborators list)
+        let collaboratorsId = [];
         if (collaborators && collaborators.length > 0) {
+            // Find users for each collaborator
             for (const collaborator of collaborators) {
                 const user = await userModel.findOne({ email: collaborator });
                 if (!user) {
@@ -31,21 +61,22 @@ export const createRepositoryController = async (request, response) => {
                     });
                 }
                 collaboratorsId.push(user._id);
+
+                // Send an invitation email to the collaborator
+                await sendMail(user.email, "Repository Invitation", newRepo.name, owner.name);
             }
         }
 
-        const newRepo = await repoModel.create({
-            name,
-            owner: owner._id,
-            description,
-            isPrivate,
-            collaborators: collaborators || []
-        })
+        // Update the repository's collaborators list
+        newRepo.collaborators = collaboratorsId || [];
+        await newRepo.save();
+
         return response.status(201).json({
             success: true,
-            message: "Repository created successfully",
+            message: "Repository created successfully with a README.md file and collaborators invited",
             repo: newRepo,
         });
+
     } catch (error) {
         console.error(error);
         return response.status(500).json({
@@ -53,7 +84,9 @@ export const createRepositoryController = async (request, response) => {
             message: 'Internal Server Error'
         });
     }
-}
+};
+
+
 
 export const commitToRepoController = async (req, res) => {
     try {
@@ -205,14 +238,13 @@ export const getUserRepoController = async (req, res) => {
         const { id } = req.params; // Get user ID from request params
 
         // Find all repositories owned by the user where `nextCommit` is null (latest version)
-        let repos = await repoModel.find({ owner: id, nextCommit: null });
+        let repos = await repoModel.find({ owner: id, nextCommit: null }).select("-mainFolders");
 
         if (!repos || repos.length === 0) {
             return res.status(404).json({ message: "No repositories found for this user" });
         }
 
         // Populate all repositories concurrently
-        repos = await Promise.all(repos.map(async (repo) => await populateRepoFolders(repo)));
 
         return res.status(200).json({
             message: "User's repositories fetched successfully",
@@ -231,6 +263,7 @@ export const addCollaboratorsController = async (req, res) => {
 
         // Find all repositories owned by the given ownerId and having the given repoName
         const repos = await repoModel.find({ owner: ownerId, name: repoName });
+        const owner = await userModel.findOne({ _id: ownerId })
 
         if (!repos.length) {
             return res.status(404).json({ message: "No repositories found matching the criteria" });
@@ -254,13 +287,19 @@ export const addCollaboratorsController = async (req, res) => {
 
         // Update all matching repositories
         for (const repo of repos) {
+            // Add collaborators to the repository
             repo.collaborators = [...new Set([...repo.collaborators, ...collaboratorsId])];
             await repo.save();
+
+            // Send invitation email to each collaborator
+            for (const user of users) {
+                await sendMail(user.email, "Repository Invitation", repo.name, owner.name); // You can send the email with details like repo name and owner
+            }
         }
 
         return res.status(200).json({
             success: true,
-            message: "Collaborators added successfully to all matching repositories",
+            message: "Collaborators added and invitation emails sent successfully",
             updatedRepos: repos
         });
 
