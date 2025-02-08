@@ -7,6 +7,7 @@ import { SandpackFileExplorer } from "sandpack-file-explorer";
 import { Terminal, Plus, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSocket } from "@/app/context/socket";
+import useOnlineUserStore from "@/app/context/onlineUserStore";
 
 const OnlineUserBadge = ({ name, email }) => (
   <div className="flex items-center gap-2 p-2 hover:bg-[#1E2D3D] rounded transition-colors">
@@ -26,13 +27,15 @@ const OnlineUserBadge = ({ name, email }) => (
 );
 
 function SandpackBetter() {
-  const socket = useSocket();
+  const {socket,onlineUsers} = useSocket();
   const [showConsole, setShowConsole] = useState(false);
   const [showOnlineUsers, setShowOnlineUsers] = useState(true);
-  const [onlineUsers, setOnlineUsers] = useState([]);
   const { sandpack } = useSandpack();
   const { files, activeFile } = sandpack;
   const code = files[activeFile].code;
+  const {users} = useOnlineUserStore();
+
+  console.log("online users: ",users);  
 
   useEffect(() => {
     if (code) {
@@ -45,10 +48,6 @@ function SandpackBetter() {
       socket.on('fileUpdated', ({ filePath, newCode }) => {
         console.log("File is updated", JSON.stringify(newCode));
         sandpack.updateFile(filePath, newCode);
-      });
-
-      socket.on('getAllOnlineUsers', ({ users }) => {
-        setOnlineUsers(users);
       });
 
       return () => {
@@ -89,12 +88,12 @@ function SandpackBetter() {
               <span className="text-sm">Online Users</span>
             </div>
             <span className="text-xs bg-[#1E2D3D] px-2 py-1 rounded">
-              {onlineUsers.length}
+              {users.length}
             </span>
           </button>
-          {showOnlineUsers && (
+          {showOnlineUsers && Array.isArray(users) && (
             <div className="max-h-48 overflow-y-auto border-t border-[#1E2D3D]">
-              {onlineUsers.map((user) => (
+              {users.map((user) => (
                 <OnlineUserBadge
                   key={user.userId}
                   name={user.name}

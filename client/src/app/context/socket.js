@@ -1,5 +1,6 @@
 import io from 'socket.io-client';
 import { useEffect, createContext, useContext, useState } from 'react';
+import useOnlineUserStore from './onlineUserStore';
 
 const SocketContext = createContext(null);
 
@@ -11,6 +12,7 @@ export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const [isSocketConnected, setIsSocketConnected] = useState(false);
   const user = localStorage.getItem('user');
+  const {users,setUsers} = useOnlineUserStore();
 
   useEffect(() => {
     if (!socket) {
@@ -34,6 +36,7 @@ export const SocketProvider = ({ children }) => {
 
       newSocket.on('getAllOnlineUsers', (data) => {
         console.log('Received online users:', data);
+        setUsers(data.users)
       });
 
       return () => {
@@ -49,25 +52,6 @@ export const SocketProvider = ({ children }) => {
       };
     }
   }, []);
-
-  useEffect(() => {
-    if (socket) {
-      socket.on('disconnect', () => {
-        console.log('Socket disconnected');
-        setIsSocketConnected(false);
-      });
-
-      socket.on('reconnect', (attemptNumber) => {
-        console.log('Socket reconnected after', attemptNumber, 'attempts');
-        setIsSocketConnected(true);
-      });
-
-      return () => {
-        socket.off('disconnect');
-        socket.off('reconnect');
-      };
-    }
-  }, [socket]);
 
   if (!isSocketConnected) {
     return (
