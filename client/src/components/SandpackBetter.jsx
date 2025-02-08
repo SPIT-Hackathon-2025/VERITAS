@@ -68,6 +68,7 @@ function SandpackBetter() {
   useEffect(() => {
     if (socket && activeFile) {
       socket.emit('fileChange', { filePath: activeFile });
+      setCursors({})
     }
   }, [activeFile, socket]);
 
@@ -82,7 +83,7 @@ function SandpackBetter() {
   };
 
   const handleCursorMove = (event) => {
-    // if (!socket || !editorRef.current) return;
+    if (!socket || !editorRef.current) return;
   
     const editor = editorRef.current;
     const rect = editor.getBoundingClientRect();
