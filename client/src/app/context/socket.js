@@ -1,6 +1,6 @@
+'use client'
 import io from 'socket.io-client'
 import {useEffect, createContext, useContext, useRef, Children, useState} from 'react'
-import { server_url } from '../routes'
 
 const socketContext = createContext(null)
 
@@ -13,7 +13,7 @@ export const SocketProvider=({children})=>{
     const [isSocketConnected, setIsSocketConnected] = useState(false);
         useEffect(()=>{
             const userid='id'
-                socket.current= io(server_url,{
+                socket.current= io('localhost',{
                     withCredentials:true,
                     query:{userid},
                     reconnection:true
