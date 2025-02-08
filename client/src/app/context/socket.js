@@ -1,6 +1,7 @@
 import io from 'socket.io-client';
 import { useEffect, createContext, useContext, useState } from 'react';
 import { auth } from '../hooks/firebase';
+import useOnlineUserStore from './onlineUserStore'; 
 
 const socketContext = createContext(null);
 
@@ -13,7 +14,7 @@ export const SocketProvider = ({ children }) => {
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [isSocketConnected, setIsSocketConnected] = useState(false);
   const user = localStorage.getItem('user')
-  
+  const { users, addUser, setUsers } = useOnlineUserStore();
 
   useEffect(() => {
     // Only create socket if it doesn't exist
@@ -38,8 +39,9 @@ export const SocketProvider = ({ children }) => {
       });
 
       newSocket.on('getAllOnlineUsers', (data) => {
-        console.log('Received online users:', data);
+        console.log('Received online users:', data.users);
         setOnlineUsers(data);
+        setUsers(data.users);
       });
 
       // Cleanup function

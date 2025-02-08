@@ -8,46 +8,51 @@ import { SandpackFileExplorer } from "sandpack-file-explorer";
 import { Terminal, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSocket } from "@/app/context/socket";
-import { FileTree } from "./fileTree";
+import useOnlineUserStore from "@/app/context/onlineUserStore";
 
 function SandpackBetter() {
-
   const socket = useSocket();
-
+  const { users, setUsers } = useOnlineUserStore(); // Zustand store for online users
   const [showConsole, setShowConsole] = useState(false);
-  const [onlineUsers,setOnlineUsers] = useState([])
   const { sandpack } = useSandpack();
   const { files, activeFile } = sandpack;
   const code = files[activeFile].code;
+
   useEffect(() => {
     if (code) {
-      // Call your backend update function here
       updateCodeInBackend(activeFile, code);
     }
-  }, [code]); 
+  }, [code]);
+
+  useEffect(() => {
+    console.log("Users:", users); // ✅ Debugging: Log online users
+  }, [users]);
 
   const updateCodeInBackend = (filePath, newCode) => {
-    // Assuming you have a socket function here to send code updates
-    if(socket)
+    if (socket) {
       socket.emit("updateFile", { filePath, newCode });
+    }
   };
 
   useEffect(() => {
     if (socket) {
-        socket.on('fileUpdated', ({ filePath, newCode }) => {
-            // Update the file in the editor when another user makes changes
-            console.log("File is updated",JSON.stringify(newCode));
-            
-            sandpack.updateFile(filePath, newCode);
-        });
+      socket.on("fileUpdated", ({ filePath, newCode }) => {
+        console.log("File is updated", JSON.stringify(newCode));
+        sandpack.updateFile(filePath, newCode);
+      });
 
-        return () => {
-            socket.off("fileUpdated");
-            socket.off("getAllOnlineUsers"); // Clean up the 'getAllOnlineUsers' listener
-        };
+      // Fetch all online users from the socket
+      socket.on("getAllOnlineUsers", (onlineUsers) => {
+        console.log("Online users received:", onlineUsers);
+        setUsers(onlineUsers); // ✅ Update Zustand store with online users
+      });
+
+      return () => {
+        socket.off("fileUpdated");
+        socket.off("getAllOnlineUsers"); // Clean up listeners
+      };
     }
   }, [socket]);
-
 
   return (
     <div className="absolute inset-0 flex h-screen w-screen font-jetbrains">
@@ -60,7 +65,7 @@ function SandpackBetter() {
           </button>
         </div>
         <div className="flex-1 overflow-auto">
-          <FileTree files={files} activeFile={activeFile}/>
+          <SandpackFileExplorer />
         </div>
       </div>
 
@@ -88,6 +93,22 @@ function SandpackBetter() {
               <SandpackPreview style={{ height: "100%" }} />
             </div>
           </div>
+        </div>
+
+        {/* Online Users List */}
+        <div className="border-t border-[#1E2D3D] p-4 bg-[#011627] text-[#5F7E97]">
+          <h3 className="text-sm font-semibold mb-2">Online Users</h3>
+          <ul>
+            {users.length > 0 ? (
+              users.map((user) => (
+                <li key={user.userId} className="text-xs">
+                  {user.name} ({user.email})
+                </li>
+              ))
+            ) : (
+              <li className="text-xs">No users online</li>
+            )}
+          </ul>
         </div>
 
         {/* Console */}
