@@ -4,11 +4,15 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "client":"cd client && npm run dev",
-    "server":"cd server && nodemomn server.js"
+    "client": "cd client && npm run dev",
+    "server": "cd server && nodemomn server.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "@fontsource/jetbrains-mono": "^5.1.2",
+    "react-font": "^1.2.1"
+  }
 }

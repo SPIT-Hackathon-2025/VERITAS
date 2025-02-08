@@ -40,7 +40,7 @@ const MySandpackComponent = () => {
   return (
     <div className="h-screen flex flex-col bg-[#011627]">
       {/* Header */}
-      <div className="h-12 border-b border-[#1E2D3D] flex items-center justify-between px-4">
+      {/* <div className="h-12 border-b border-[#1E2D3D] flex items-center justify-between px-4">
         <div className="flex items-center space-x-4">
           <h1 className="text-white font-medium">Sandpack Editor</h1>
         </div>
@@ -50,7 +50,7 @@ const MySandpackComponent = () => {
             Run
           </button>
         </div>
-      </div>
+      </div> */}
 
       <SandpackProvider
         template="react-ts"
