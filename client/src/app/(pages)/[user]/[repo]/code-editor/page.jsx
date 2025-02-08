@@ -17,27 +17,27 @@ import { SocketProvider } from "@/app/context/socket";
 
 const MySandpackComponent = () => {
   const [files, setFiles] = useState({
-    "/src/index.js": `export default function App() {
-      return <h1>Hello World</h1>
-    }`,
-    "/src/components/Button.js": `export default function Button({ children }) {
-      return <button className="px-4 py-2 bg-blue-500 rounded">{children}</button>
-    }`,
-    "/src/components/button/newButton.js": `export default function Button({ children }) {
-      return <button className="px-4 py-2 bg-blue-500 rounded">{children}</button>
-    }`,
-    "/src/styles/main.css": `body {
-      margin: 0;
-      padding: 1rem;
-    }`,
+    // "/src/index.js": `export default function App() {
+    //   return <h1>Hello World</h1>
+    // }`,
+    // "/src/components/Button.js": `export default function Button({ children }) {
+    //   return <button className="px-4 py-2 bg-blue-500 rounded">{children}</button>
+    // }`,
+    // "/src/components/button/newButton.js": `export default function Button({ children }) {
+    //   return <button className="px-4 py-2 bg-blue-500 rounded">{children}</button>
+    // }`,
+    // "/src/styles/main.css": `body {
+    //   margin: 0;
+    //   padding: 1rem;
+    // }`,
   });
 
   useEffect(() => {
     console.log(files);
   }, [files]);
 
-  const [activeFile, setActiveFile] = useState("/src/App.js");
-  const [showConsole, setShowConsole] = useState(false);
+  // const [activeFile, setActiveFile] = useState("/src/App.js");
+  // const [showConsole, setShowConsole] = useState(false);
 
   return (
     <SocketProvider>
