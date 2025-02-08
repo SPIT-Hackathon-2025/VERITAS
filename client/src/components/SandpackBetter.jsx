@@ -10,6 +10,7 @@ import { useSocket } from "@/app/context/socket";
 import useOnlineUserStore from "@/app/context/onlineUserStore";
 import { useParams } from "next/navigation";
 import useRepoStore from "@/app/context/repoStore";
+import axios from "axios";
 
 const OnlineUserBadge = ({ name, email }) => (
   <div className="flex items-center gap-2 p-2 hover:bg-[#1E2D3D] rounded transition-colors">
@@ -34,11 +35,44 @@ function SandpackBetter() {
   const [showOnlineUsers, setShowOnlineUsers] = useState(true);
   const { sandpack } = useSandpack();
   const { files, activeFile } = sandpack;
+  const [prevFiles, setPrevFiles] = useState(files);
   const code = files[activeFile].code;
-  const {users} = useOnlineUserStore();
-  // const params = useParams();
+  const { users } = useOnlineUserStore();
+  useEffect(() => {
+    console.log("files", files);
+    const prevKeys = Object.keys(prevFiles);
+    const newKeys = Object.keys(files);
+
+    const createFile = async () => {
+      try {
+        for(let i=0; i<Math.min(prevKeys.length,newKeys.length); i++) {
+          if(prevKeys[i] !== newKeys[i] && newKeys[i].startsWith('/src/')) {
+            const path = newKeys[i].split('/src/')[1];
+            console.log("path", path);
+            const repoId = params.repoId;
+            const content = files[newKeys[i]].code;
+            const name = path.split('/').pop();
+            const respose = await axios.post(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/v1/file/create-file`, {
+              repoId,
+              path,
+              content,
+              name,
+              parentId: null
+            })
+            console.log("response", respose.data);
+          }
+        }
+        
+      } catch (error) {
+        console.log(error)
+      }
+    }
+    createFile();
+
+    // Check if keys are different
+  }, [files]); // const params = useParams();
   // const user = JSON.parse(localStorage.getItem('user')).uid;
-  
+
   const editorRef = useRef(null);
   const [cursors, setCursors] = useState([]);
 
@@ -47,30 +81,28 @@ function SandpackBetter() {
   // useEffect(() => {
   //   const id=getFileIdFromPath(repoState, "README.md");
   //   console.log('id is',id);
-    
+
   // }, [repoState]);
 
   function getFileIdFromPath(repo, filePath) {
     function searchFolders(folders, target) {
-      
-      if(!folders || !folders.length) return null; // File not found
-      for(const folder of folders) {
-        console.log('folder',folder);
-        
-        if(folder.isFile && folder.name === target) {
-            return folder._id;
-          } else {
-            const id=searchFolders(folder.children, target)
-            if(id) return id
-          }
+      if (!folders || !folders.length) return null; // File not found
+      for (const folder of folders) {
+        console.log("folder", folder);
+
+        if (folder.isFile && folder.name === target) {
+          return folder._id;
+        } else {
+          const id = searchFolders(folder.children, target);
+          if (id) return id;
         }
-        return null
       }
-      
+      return null;
+    }
 
     const target = filePath.split("/").pop(); // Split path into array
     console.log(repo?.repo?.mainFolders);
-    
+
     return searchFolders(repo?.repo?.mainFolders, target);
   }
 
@@ -82,7 +114,7 @@ function SandpackBetter() {
 
   useEffect(() => {
     if (socket) {
-      socket.on('fileUpdated', ({ filePath, newCode, repo }) => {
+      socket.on("fileUpdated", ({ filePath, newCode, repo }) => {
         // Only update if the file update is for our repo
         if (repo === socket.handshake.query.repo) {
           sandpack.updateFile(filePath, newCode);
@@ -96,15 +128,15 @@ function SandpackBetter() {
         }));
       });
 
-      socket.on('removeCursor', ({ userId }) => {
-        setCursors(prev => {
+      socket.on("removeCursor", ({ userId }) => {
+        setCursors((prev) => {
           const newCursors = { ...prev };
           delete newCursors[userId];
           return newCursors;
         });
       });
 
-      socket.on('getAllOnlineUsers', ({ users, repo }) => {
+      socket.on("getAllOnlineUsers", ({ users, repo }) => {
         // Only update users if the update is for our repo
         if (repo === socket.handshake.query.repo) {
           useOnlineUserStore.setState({ users });
@@ -127,7 +159,6 @@ function SandpackBetter() {
       setCursors({});
     }
   }, [activeFile, socket]);
-  
 
   const updateCodeInBackend = (filePath, newCode) => {
     console.log("here");
