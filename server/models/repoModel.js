@@ -26,6 +26,14 @@ const repoSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "files"
     }], // Root-level folders
+    branches: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "repos"
+    }],
+    parentBranch: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "repos"
+    },
     previousCommit: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "repos",
