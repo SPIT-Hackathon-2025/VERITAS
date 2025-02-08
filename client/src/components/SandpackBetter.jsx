@@ -29,7 +29,7 @@ function SandpackBetter() {
   const updateCodeInBackend = (filePath, newCode) => {
     // Assuming you have a socket function here to send code updates
     if(socket)
-    socket.emit("updateFile", { filePath, newCode });
+      socket.emit("updateFile", { filePath, newCode });
   };
 
   // useEffect(() => {
