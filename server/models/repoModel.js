@@ -6,7 +6,7 @@ const repoSchema = new mongoose.Schema({
         required: true,
     }, // Repository name
     owner: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: String,
         ref: "users",
         required: true
     }, // Repository owner
@@ -19,7 +19,7 @@ const repoSchema = new mongoose.Schema({
         default: false
     }, // Visibility (private/public)
     collaborators: [{
-        type: mongoose.Schema.Types.ObjectId,
+        type: String,
         ref: "users"
     }], // Users with access
     mainFolders: [{
