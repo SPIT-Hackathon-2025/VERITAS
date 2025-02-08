@@ -1,9 +1,17 @@
-import React from 'react'
+import { HeroSection } from "@/components/HeroSection"
+import { FeaturesSection } from "@/components/FeaturesSection"
+import { SocialProofSection } from "@/components/SocialProofSection"
+import { Footer } from "@/components/Footer"
+import { FeedbackSection } from "@/components/SocialProofSection"
 
-const page = () => {
+export default function Home() {
   return (
-    <div>Main Page</div>
+    <main className="flex min-h-screen flex-col items-center justify-between">
+      <HeroSection />
+      <FeaturesSection />
+      <FeedbackSection />
+      <Footer/>
+    </main>
   )
 }
 
-export default page
