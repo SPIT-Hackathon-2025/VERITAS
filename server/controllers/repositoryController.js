@@ -1,6 +1,7 @@
 import { fileModel } from "../models/fileModel.js";
 import { repoModel } from "../models/repoModel.js";
 import { userModel } from "../models/userModel.js";
+import { diffLines } from "diff";
 import sendMail from "../utils/sendMail.js";
 
 
@@ -106,6 +107,7 @@ export const commitToRepoController = async (req, res) => {
             collaborators: currentRepo.collaborators,
             mainFolders: [],
             previousCommit: currentRepo._id, // Link previous repo version
+            parentBranch: currentRepo.parentBranch
         };
 
         // Create a new repository version
@@ -176,9 +178,9 @@ const cloneFolder = async (folderId, newRepoId, updatedFiles) => {
 
 export const getRepoController = async (req, res) => {
     try {
-        const name = req.params.name;
+        const id = req.params.id;
         // Find the repository by name
-        let repo = await repoModel.findOne({ name: name }).populate("mainFolders");
+        let repo = await repoModel.findById(id).populate("mainFolders");
         if (!repo) {
             return res.status(404).json({ message: "Repository not found" });
         }
@@ -306,6 +308,309 @@ export const addCollaboratorsController = async (req, res) => {
     } catch (error) {
         console.error("Error adding collaborators:", error);
         return res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+export const createBranchController = async (req, res) => {
+    try {
+        const { repoId, userId, branchName } = req.body;  // Get repoName, ownerId from params and userId from body  
+
+        // Step 1: Find the original repository by repoName and ownerId
+        const originalRepo = await repoModel.findOne({ _id: repoId }).populate('mainFolders');
+        if (!originalRepo) {
+            return res.status(404).json({ message: "Original repository not found" });
+        }
+
+        // Step 2: Find the latest version of the repository (this could be the next commit or latest branch)
+        let latestRepo = originalRepo;
+        if (originalRepo.nextCommit) {
+            latestRepo = await repoModel.findById(originalRepo.nextCommit).populate('mainFolders');
+        }
+
+        // Step 3: Clone the latest version of the repository (create a new branch)
+        const newRepoData = {
+            name: branchName,
+            owner: userId,  // Set the owner of the new repo as the provided userId
+            description: latestRepo.description,
+            isPrivate: latestRepo.isPrivate,
+            collaborators: latestRepo.collaborators,  // Same collaborators as the original repo (you can adjust this later)
+            mainFolders: [],  // To hold the folder structure of the new repo
+            previousCommit: latestRepo._id,  // Link the previous commit to the latest repo
+        };
+
+        // Create the new repository (branch)
+        const newRepo = await repoModel.create(newRepoData);
+
+        // Step 4: Add the new repo (branch) to the original repo's `branches` array
+        originalRepo.branches = [...(originalRepo.branches || []), newRepo._id];
+        await originalRepo.save();  // Save the updated original repo with the new branch
+
+        // Step 5: Clone the folder structure and files from the latest version
+        for (const folderId of latestRepo.mainFolders) {
+            const clonedFolder = await cloneFolderBranch(folderId, newRepo._id, userId);  // Clone each folder
+            newRepo.mainFolders.push(clonedFolder._id);  // Add the cloned folder to the new repo
+        }
+
+        newRepo.parentBranch = originalRepo._id
+
+        await newRepo.save();  // Save the new repo with its folder structure
+
+        return res.status(201).json({
+            message: "Branch created successfully",
+            newRepo,
+        });
+
+    } catch (error) {
+        console.error("Error creating branch:", error);
+        return res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+const cloneFolderBranch = async (folderId, newRepoId, userId) => {
+    const folder = await fileModel.findById(folderId).populate("children");
+
+    if (!folder) return null;
+
+    // Clone folder metadata
+    const newFolder = await fileModel.create({
+        repo: newRepoId, // New repo for the clone
+        parent: null, // Root-level folder has no parent
+        name: folder.name,
+        isFile: folder.isFile,
+        path: folder.path.replace(folder.repo.toString(), newRepoId.toString()), // Update path to the new repo
+        content: folder.content, // Copy content of the file if it is a file
+        owner: userId, // Set the owner to the new user (userId)
+        children: [], // Children will be populated recursively
+    });
+
+    // Recursively clone subfolders and files
+    for (const childId of folder.children) {
+        const clonedChild = await cloneFolderBranch(childId, newRepoId, userId);
+        if (clonedChild) {
+            newFolder.children.push(clonedChild._id); // Add the cloned child to the new folder
+        }
+    }
+
+    await newFolder.save(); // Save the newly cloned folder (or file)
+    return newFolder;
+};
+
+export const compareBranchWithMasterController = async (req, res) => {
+    try {
+        const { branchRepoId } = req.body; // Get the branch repo ID from request params
+
+        // Step 1: Fetch the branch repository
+        let branchRepo = await repoModel.findById(branchRepoId)
+        if (!branchRepo) {
+            return res.status(404).json({ message: "Branch repository not found" });
+        }
+
+        while (branchRepo.nextCommit) {
+            branchRepo = await repoModel.findById(branchRepo.nextCommit)
+        }
+
+        // Step 2: Fetch the master repository (parentBranch)
+        const masterRepo = await repoModel.findById(branchRepo.parentBranch);
+        if (!masterRepo) {
+            return res.status(404).json({ message: "Master repository not found" });
+        }
+
+        // Step 3: Populate folder structures for both repositories
+        const populatedBranchRepo = await populateRepoFolders(branchRepo);
+        const populatedMasterRepo = await populateRepoFolders(masterRepo);
+
+        // Step 4: Compare files between the two repositories
+        const fileDifferences = compareRepoFiles(populatedBranchRepo, populatedMasterRepo);
+
+        // Step 5: Send response with both repo structures and file differences
+        return res.status(200).json({
+            message: "Branch and Master comparison",
+            branchRepo: populatedBranchRepo,
+            masterRepo: populatedMasterRepo,
+            fileDifferences,
+        });
+
+    } catch (error) {
+        console.error("Error comparing branch with master:", error);
+        return res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+// Function to compare files between two repositories
+const compareRepoFiles = (branchRepo, masterRepo) => {
+    let differences = [];
+
+    // Flatten the files from both repositories into a single list
+    const branchFiles = getAllFiles(branchRepo.mainFolders);
+    const masterFiles = getAllFiles(masterRepo.mainFolders);
+
+    // Create a map for easy lookup of master branch files by path
+    const masterFileMap = {};
+    for (const file of masterFiles) {
+        masterFileMap[file.path] = file;
+    }
+
+    // Compare each file in the branch with its corresponding file in the master repo
+    for (const branchFile of branchFiles) {
+        if (!masterFileMap[branchFile.path]) {
+            differences.push({
+                filePath: branchFile.path,
+                message: "File exists in branch but not in master",
+            });
+            continue;
+        }
+
+        const masterFile = masterFileMap[branchFile.path];
+        const diffResult = getLineDifferences(branchFile.content, masterFile.content);
+
+        if (diffResult.length > 0) {
+            differences.push({
+                filePath: branchFile.path,
+                differences: diffResult,
+            });
+        }
+    }
+
+    return differences;
+};
+
+// Function to recursively retrieve all files from a repository's folder structure
+const getAllFiles = (folders) => {
+    let files = [];
+    for (const folder of folders) {
+        if (folder.isFile) {
+            files.push(folder);
+        } else if (folder.children) {
+            files = files.concat(getAllFiles(folder.children)); // Recursively get files
+        }
+    }
+    return files;
+};
+
+// Function to compare two file contents line-by-line
+const getLineDifferences = (branchContent, masterContent) => {
+    const differences = [];
+    const diff = diffLines(masterContent, branchContent); // Line-by-line comparison
+
+    let lineNum = 1;
+    for (const part of diff) {
+        if (part.added) {
+            differences.push({ line: lineNum, type: "added", content: part.value });
+        } else if (part.removed) {
+            differences.push({ line: lineNum, type: "removed", content: part.value });
+        }
+        lineNum += part.count || 0;
+    }
+
+    return differences;
+};
+
+export const mergeWithMasterBranchController = async (req, res) => {
+    try {
+        const { branchRepoId } = req.body;
+
+        // Find the latest commit of the branch
+        let branchRepo = await repoModel.findById(branchRepoId).populate("mainFolders");
+        if (!branchRepo) {
+            return res.status(404).json({ success: false, message: "Branch repository not found" });
+        }
+
+        while (branchRepo.nextCommit) {
+            branchRepo = await repoModel.findById(branchRepo.nextCommit).populate("mainFolders");
+        }
+
+        // Find the master branch (parent branch)
+        const masterRepo = await repoModel.findById(branchRepo.parentBranch).populate("mainFolders");
+        if (!masterRepo) {
+            return res.status(404).json({ success: false, message: "Master branch repository not found" });
+        }
+
+        // Populate master and branch repositories with full folder structures
+        await populateRepoFolders(masterRepo);
+        await populateRepoFolders(branchRepo);
+
+        // Map branch files by relative path for easy lookup
+        const branchFilesMap = new Map();
+        for (const folder of branchRepo.mainFolders) {
+            mapFilesRecursively(folder, branchFilesMap);
+        }
+
+        // Merge files into the master branch
+        for (const folder of masterRepo.mainFolders) {
+            mergeFilesRecursively(folder, branchFilesMap);
+        }
+
+        // Save all updated master files
+        for (const folder of masterRepo.mainFolders) {
+            await saveFilesRecursively(folder);
+        }
+
+        // Delete the branch repository after merging
+        await repoModel.findByIdAndDelete(branchRepo._id);
+
+        return res.status(200).json({
+            success: true,
+            message: "Branch successfully merged with master and deleted",
+        });
+
+    } catch (error) {
+        console.error("Error merging branch with master:", error);
+        return res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+};
+
+const mapFilesRecursively = (folder, fileMap, path = "") => {
+    if (!folder) return;
+
+    const newPath = path + "/" + folder.name;
+
+    if (folder.isFile) {
+        fileMap.set(newPath, folder);
+    } else {
+        for (const child of folder.children) {
+            mapFilesRecursively(child, fileMap, newPath);
+        }
+    }
+};
+
+const mergeFilesRecursively = (folder, branchFilesMap, path = "") => {
+    if (!folder) return;
+
+    const newPath = path + "/" + folder.name;
+
+    if (folder.isFile && branchFilesMap.has(newPath)) {
+        const branchFile = branchFilesMap.get(newPath);
+
+        // Merge file content line by line
+        const masterContent = folder.content.split("\n");
+        const branchContent = branchFile.content.split("\n");
+
+        const maxLength = Math.max(masterContent.length, branchContent.length);
+        let mergedContent = "";
+
+        for (let i = 0; i < maxLength; i++) {
+            const masterLine = masterContent[i] || "";
+            const branchLine = branchContent[i] || "";
+            mergedContent += masterLine + "\n" + branchLine + "\n";
+        }
+
+        folder.content = mergedContent; // Update master branch file content
+    } else {
+        for (const child of folder.children) {
+            mergeFilesRecursively(child, branchFilesMap, newPath);
+        }
+    }
+};
+
+const saveFilesRecursively = async (folder) => {
+    if (!folder) return;
+
+    if (folder.isFile) {
+        await folder.save();
+    } else {
+        for (const child of folder.children) {
+            await saveFilesRecursively(child);
+        }
     }
 };
 
