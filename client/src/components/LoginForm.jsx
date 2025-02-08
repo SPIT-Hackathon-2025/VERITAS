@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 const LoginForm = () => {
   const [email, setEmail] = useState("");
@@ -70,30 +71,50 @@ const LoginForm = () => {
   };
 
   const handleGoogleSignIn = async () => {
-    setLoading(true);
-    setError("");
+  setLoading(true);
+  setError("");
 
-    try {
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      const username = user.displayName ? user.displayName.replace(/\s+/g, "") : "user";
+  try {
+    const provider = new GoogleAuthProvider();
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+    const isNewUser = result._tokenResponse?.isNewUser; // Check if the user is new
+    const username = user.displayName ? user.displayName.replace(/\s+/g, "") : "user";
 
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          uid: user.uid,
-          displayName: user.displayName,
+    // Store user data locally
+    localStorage.setItem(
+      "user",
+      JSON.stringify({
+        uid: user.uid,
+        displayName: user.displayName,
+        email: user.email,
+      })
+    );
+
+    // If new user, send data to backend
+    if (isNewUser) {
+      await fetch(`${BACKEND_URL}/api/v1/user/create-user`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id:user.uid,
+          name: user.displayName,
           email: user.email,
-        })
-      );
-      router.push(`/${username}/repositories`);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+          password: "password", 
+        }),
+      });
     }
-  };
+
+    router.push(`/${username}/repositories`);
+  } catch (err) {
+    setError(err.message);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <div className="min-h-screen bg-gray-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
