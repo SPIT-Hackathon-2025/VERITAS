@@ -42,10 +42,13 @@ function SandpackBetter() {
     console.log("files", files);
     const prevKeys = Object.keys(prevFiles);
     const newKeys = Object.keys(files);
-
+    
     const createFile = async () => {
       try {
         for(let i=0; i<Math.min(prevKeys.length,newKeys.length); i++) {
+          // console.log("prevKeys[i]", prevKeys[i]);
+          // console.log("newKeys[i]", newKeys[i]);
+          
           if(prevKeys[i] !== newKeys[i] && newKeys[i].startsWith('/src/')) {
             const path = newKeys[i].split('/src/')[1];
             console.log("path", path);
