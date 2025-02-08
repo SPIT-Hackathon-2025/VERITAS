@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import { useSocket } from "@/app/context/socket";
 import useOnlineUserStore from "@/app/context/onlineUserStore";
 import { useParams } from "next/navigation";
+import useRepoStore from "@/app/context/repoStore";
 
 const OnlineUserBadge = ({ name, email }) => (
   <div className="flex items-center gap-2 p-2 hover:bg-[#1E2D3D] rounded transition-colors">
@@ -39,7 +40,39 @@ function SandpackBetter() {
   // const user = JSON.parse(localStorage.getItem('user')).uid;
   
   const editorRef = useRef(null);
-  const [cursors,setCursors] = useState([])
+  const [cursors, setCursors] = useState([]);
+
+  // console.log("repoState", repoState);
+
+  // useEffect(() => {
+  //   const id=getFileIdFromPath(repoState, "README.md");
+  //   console.log('id is',id);
+    
+  // }, [repoState]);
+
+  function getFileIdFromPath(repo, filePath) {
+    function searchFolders(folders, target) {
+      
+      if(!folders || !folders.length) return null; // File not found
+      for(const folder of folders) {
+        console.log('folder',folder);
+        
+        if(folder.isFile && folder.name === target) {
+            return folder._id;
+          } else {
+            const id=searchFolders(folder.children, target)
+            if(id) return id
+          }
+        }
+        return null
+      }
+      
+
+    const target = filePath.split("/").pop(); // Split path into array
+    console.log(repo?.repo?.mainFolders);
+    
+    return searchFolders(repo?.repo?.mainFolders, target);
+  }
 
   useEffect(() => {
     if (code) {
@@ -56,10 +89,10 @@ function SandpackBetter() {
         }
       });
 
-      socket.on('cursorMove', ({ userId, position, name }) => {
-        setCursors(prev => ({
+      socket.on("cursorMove", ({ userId, position, name }) => {
+        setCursors((prev) => ({
           ...prev,
-          [userId]: { position, name }
+          [userId]: { position, name },
         }));
       });
 
@@ -89,7 +122,7 @@ function SandpackBetter() {
 
   useEffect(() => {
     if (socket && activeFile) {
-      socket.emit('fileChange', { filePath: activeFile });
+      socket.emit("fileChange", { filePath: activeFile });
       // socket.emit('removeCursor', { filePath: activeFile });
       setCursors({});
     }
@@ -97,49 +130,57 @@ function SandpackBetter() {
   
 
   const updateCodeInBackend = (filePath, newCode) => {
-    console.log('here');
-    
+    console.log("here");
+
     if (socket) {
-      console.log(newCode,filePath);
-      
+      console.log(newCode, filePath);
+
       socket.emit("updateFile", { filePath, newCode });
     }
   };
 
   const handleCursorMove = (event) => {
     if (!socket || !editorRef.current) return;
-  
+
     const editor = editorRef.current;
     const rect = editor.getBoundingClientRect();
-  
+
     const position = {
       x: event.clientX - rect.left,
-      y: event.clientY - rect.top
+      y: event.clientY - rect.top,
     };
-  
-    console.log(position);    
-  
-    socket.emit('cursorMove', { 
+
+    console.log(position);
+
+    socket.emit("cursorMove", {
       position,
-      filePath: activeFile  // Add this line
+      filePath: activeFile, // Add this line
     });
   };
 
   const getUserColor = (userId) => {
     const colors = [
-      '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4',
-      '#FFEEAD', '#D4A5A5', '#9B59B6', '#3498DB','#fff'
+      "#FF6B6B", // Bright Red
+      "#FF9F43", // Vivid Orange
+      "#FFD166", // Vibrant Yellow
+      "#06D6A0", // Neon Green
+      "#4ECDC4", // Cyan
+      "#45B7D1", // Bright Blue
+      "#9B59B6", // Deep Purple
+      "#F72585", // Electric Pink
+      "#FFFFFF", // White for high contrast
     ];
-    return colors[parseInt(userId, 16) % colors.length];
+
+    return colors[parseInt(userId, 32) % colors.length];
   };
 
   const RemoteCursor = ({ color, position, username }) => (
     <div
       style={{
-        position: 'absolute',
+        position: "absolute",
         left: position.x,
         top: position.y,
-        pointerEvents: 'none',
+        pointerEvents: "none",
         zIndex: 50,
       }}
     >
@@ -153,11 +194,11 @@ function SandpackBetter() {
       <div
         style={{
           background: color,
-          padding: '2px 6px',
-          borderRadius: '2px',
-          fontSize: '12px',
-          color: 'white',
-          marginTop: '-2px',
+          padding: "2px 6px",
+          borderRadius: "2px",
+          fontSize: "12px",
+          color: "white",
+          marginTop: "-2px",
         }}
       >
         {username}
@@ -178,7 +219,7 @@ function SandpackBetter() {
         <div className="flex-1 overflow-auto">
           <SandpackFileExplorer />
         </div>
-        
+
         {/* Online Users Section */}
         <div className="border-t border-[#1E2D3D]">
           <button
@@ -211,9 +252,10 @@ function SandpackBetter() {
       <div className="flex-1 flex flex-col h-full">
         <div className="flex flex-1">
           <div className="flex-1">
-            <div className="flex-1 relative" 
-            ref={editorRef}
-            onMouseDown={handleCursorMove}
+            <div
+              className="flex-1 relative"
+              ref={editorRef}
+              onMouseDown={handleCursorMove}
             >
               <SandpackCodeEditor
                 wrapContent
@@ -221,7 +263,10 @@ function SandpackBetter() {
                 closableTabs
                 showInlineErrors
                 showLineNumbers
-                style={{ height: "100%", fontFamily: "JetBrains Mono, monospace" }}
+                style={{
+                  height: "100%",
+                  fontFamily: "JetBrains Mono, monospace",
+                }}
               />
               {Object.entries(cursors).map(([userId, cursor]) => (
                 <RemoteCursor
