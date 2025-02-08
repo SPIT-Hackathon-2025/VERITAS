@@ -2,9 +2,8 @@
 import { JetBrains_Mono } from "next/font/google"
 import "./globals.css"
 import React from "react"
-import { Navbar } from "@/components/Navbar"
 import { usePathname } from "next/navigation"
-
+import { Navbar } from "@/components/Navbar"
 const jetBrainsMono = JetBrains_Mono({ subsets: ["latin"] })
 
 export default function RootLayout({ children }) {

@@ -7,6 +7,9 @@ import { dbConnect } from './database/dbConnect.js'
 import { Server } from 'socket.io';
 import http from 'http'
 import { setupSocket } from './socket.js'
+import repoRouter from './routes/repoRoutes.js'
+import userRouter from './routes/userRoutes.js'
+import fileRouter from './routes/fileRoutes.js'
 
 dotenv.config();
 
@@ -18,10 +21,14 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
-    origin: process.env.FRONTEND_URL,
+    origin: [process.env.FRONTEND_URL,'http://192.168.56.1/3000'],
     credentials: true,
     methods: ['GET', 'PUT', 'POST', 'DELETE', 'PATCH']
 }));
+
+app.use('/api/v1/user', userRouter)
+app.use('/api/v1/repo', repoRouter)
+app.use('/api/v1/file', fileRouter)
 
 //socket io
 const server = http.createServer(app);
