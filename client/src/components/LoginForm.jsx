@@ -36,7 +36,7 @@ const LoginForm = () => {
             email: user.email,
           })
         );
-        router.push(`/${username}/repo`);
+        router.push(`/${username}/repositories`);
       }
     });
 
@@ -61,7 +61,7 @@ const LoginForm = () => {
           email: user.email,
         })
       );
-      router.push(`/${username}/repo`);
+      router.push(`/${username}/repositories`);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -87,7 +87,7 @@ const LoginForm = () => {
           email: user.email,
         })
       );
-      router.push(`/${username}/repo`);
+      router.push(`/${username}/repositories`);
     } catch (err) {
       setError(err.message);
     } finally {
