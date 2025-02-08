@@ -5,27 +5,35 @@ import { userModel } from "../models/userModel.js";
 
 export const createRepositoryController = async (request, response) => {
     try {
-        const { name, email, description, isPrivate, collaborators } = request.body;
-        if (!name || !email) {
+        const { name, id, description, isPrivate, collaborators } = request.body;
+        if (!name || !id) {
             return response.status(400).json({
                 success: false,
-                error: 'Repository name and owner email are required',
+                error: 'Repository name and owner id are required',
             });
         }
-        const owner = await userModel.findOne({ email });
+        const owner = await userModel.findOne({ _id: id });
         if (!owner) {
             return response.status(404).json({
                 success: false,
                 message: "User not found"
             });
         }
-        // const existingRepo = await repoModel.findOne({ name });
-        // if (existingRepo) {
-        //     return response.status(400).json({
-        //         success: false,
-        //         error: 'Repository already exists',
-        //     });
-        // }
+        let collaboratorsId = [];
+
+        if (collaborators && collaborators.length > 0) {
+            for (const collaborator of collaborators) {
+                const user = await userModel.findOne({ email: collaborator });
+                if (!user) {
+                    return response.status(404).json({
+                        success: false,
+                        message: `Collaborator with email ${collaborator} not found`
+                    });
+                }
+                collaboratorsId.push(user._id);
+            }
+        }
+
         const newRepo = await repoModel.create({
             name,
             owner: owner._id,
@@ -195,7 +203,6 @@ export const populateRepoFolders = async (repo) => {
 export const getUserRepoController = async (req, res) => {
     try {
         const { id } = req.params; // Get user ID from request params
-        console.log(id);
 
         // Find all repositories owned by the user where `nextCommit` is null (latest version)
         let repos = await repoModel.find({ owner: id, nextCommit: null });
@@ -217,4 +224,50 @@ export const getUserRepoController = async (req, res) => {
         return res.status(500).json({ message: "Internal Server Error" });
     }
 };
+
+export const addCollaboratorsController = async (req, res) => {
+    try {
+        const { ownerId, repoName, collaborators } = req.body;
+
+        // Find all repositories owned by the given ownerId and having the given repoName
+        const repos = await repoModel.find({ owner: ownerId, name: repoName });
+
+        if (!repos.length) {
+            return res.status(404).json({ message: "No repositories found matching the criteria" });
+        }
+
+        // Fetch users by emails
+        const users = await Promise.all(
+            collaborators.map(email => userModel.findOne({ email }))
+        );
+
+        // Check if any user is not found
+        if (users.includes(null)) {
+            return res.status(404).json({
+                success: false,
+                message: "One or more collaborators not found"
+            });
+        }
+
+        // Extract user IDs
+        const collaboratorsId = users.map(user => user._id);
+
+        // Update all matching repositories
+        for (const repo of repos) {
+            repo.collaborators = [...new Set([...repo.collaborators, ...collaboratorsId])];
+            await repo.save();
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Collaborators added successfully to all matching repositories",
+            updatedRepos: repos
+        });
+
+    } catch (error) {
+        console.error("Error adding collaborators:", error);
+        return res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
 

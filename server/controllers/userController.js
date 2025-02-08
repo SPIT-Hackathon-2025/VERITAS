@@ -3,7 +3,7 @@ import bcrypt from 'bcrypt'
 
 export const createUserController = async (request, response) => {
     try {
-        const { name, email, password } = request.body;
+        const { name, email, password, id } = request.body;
         const existingUser = await userModel.findOne({ email });
         if (existingUser) {
             return response.status(400).json({
@@ -12,7 +12,7 @@ export const createUserController = async (request, response) => {
             });
         }
         const hashedPassword = await bcrypt.hash(password, 10);
-        const user = await userModel.create({ name, email, password: hashedPassword });
+        const user = await userModel.create({ name, email, password: hashedPassword, _id: id });
         return response.status(201).json({
             success: true,
             message: "User created successfully",
