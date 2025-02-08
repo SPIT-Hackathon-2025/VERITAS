@@ -16,12 +16,12 @@ export const setupSocket = (server) => {
 
   io.on('connection', (socket) => {
     const user = JSON.parse(socket.handshake.query.user);
+
+    console.log("Socket log: ",user);   
     
     const userid = user.uid;
     const name = user.displayName;
     const email = user.email;
-
-    console.log(user);     
     
     if (userid) {
       // Store user details in the map

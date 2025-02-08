@@ -27,7 +27,7 @@ const OnlineUserBadge = ({ name, email }) => (
 );
 
 function SandpackBetter() {
-  const {socket,onlineUsers} = useSocket();
+  const socket = useSocket();
   const [showConsole, setShowConsole] = useState(false);
   const [showOnlineUsers, setShowOnlineUsers] = useState(true);
   const { sandpack } = useSandpack();
