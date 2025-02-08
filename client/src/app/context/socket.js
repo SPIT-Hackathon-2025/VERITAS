@@ -1,6 +1,7 @@
 import io from 'socket.io-client';
 import { useEffect, createContext, useContext, useState } from 'react';
 import useOnlineUserStore from './onlineUserStore';
+import { useParams } from 'next/navigation';
 
 const SocketContext = createContext(null);
 
@@ -14,11 +15,17 @@ export const SocketProvider = ({ children }) => {
   const user = localStorage.getItem('user');
   const {users,setUsers} = useOnlineUserStore();
 
+  const params = useParams();
+
+  const repo = params.repo
+
+  console.log("params: ",params);
+
   useEffect(() => {
     if (!socket) {
       const newSocket = io(process.env.NEXT_PUBLIC_SERVER_URL, {
         withCredentials: true,
-        query: { user },
+        query: {user,repo},
         reconnection: true,
         transports: ['websocket', 'polling'],
       });

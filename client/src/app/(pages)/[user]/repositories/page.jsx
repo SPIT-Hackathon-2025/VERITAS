@@ -135,7 +135,7 @@ const RepositoryCard = ({ repo, user }) => {
   };
 
   const handleNavigate = () => {
-  router.push(`/${encodeURIComponent(user.displayName)}/${encodeURIComponent(repo.name)}/code-editor?repoId=${repo._id}`);
+  router.push(`/${encodeURIComponent(repo.owner)}/${encodeURIComponent(repo._id)}/code-editor?repoId=${repo._id}`);
 };
 
   return (
@@ -186,7 +186,8 @@ const RepositoryPage = () => {
       if (!response.ok) {
         throw new Error('Failed to fetch repositories');
       }
-
+      console.log(response);
+      
       const data = await response.json();
 console.log(data);
 

@@ -5,24 +5,31 @@ dotenv.config();
 export const setupSocket = (server) => {
   const io = new Server(server, {
     cors: {
-      origin: [process.env.FRONTEND_URL, 'http://192.168.56.1/3000','http://192.168.252.104/3001'],
+      origin: [process.env.FRONTEND_URL, 'http://192.168.56.1/3000','http://192.168.252.104/3001','http://192.168.252.153/3000'],
       methods: ['GET', 'POST'],
       credentials: true,
     },
   });
 
-  // Store user details with their current file
+  // Store user details with their current file and repo
   const userMap = new Map();
-  // Store file to users mapping
-  const fileMap = new Map();
+  // Store repo+file to users mapping using composite key "repo:filePath"
+  const repoFileMap = new Map();
+
+  const getSocketIdsInRepo = (repo) => {
+    return Array.from(userMap.values())
+      .filter(user => user.currentRepo === repo)
+      .map(user => user.socketId);
+  };
 
   io.on('connection', (socket) => {
     const user = JSON.parse(socket.handshake.query.user);
-    console.log("Socket log: ", user);
+    const repo = socket.handshake.query.repo;
 
     const userid = user.uid;
     const name = user.displayName;
     const email = user.email;
+    
 
     if (userid) {
       // Store user details in the map
@@ -31,91 +38,95 @@ export const setupSocket = (server) => {
         name: name,
         email: email,
         userId: userid,
-        currentFile: null // Initialize with no file
+        repo,
+        currentFile: 'main.jsx',
+        currentRepo: repo
       });
 
-      // Convert map to array of user objects for frontend
-      const onlineUsers = Array.from(userMap.values()).map(user => ({
-        userId: user.userId,
-        name: user.name,
-        email: user.email
-      }));
+      console.log(name, " joined the repo ",repo);
 
-      // Emit to all clients when a new user connects
-      io.emit('getAllOnlineUsers', {
-        users: onlineUsers
+      // Get online users for the repo
+      const onlineUsers = Array.from(userMap.values())
+        .filter(user => user.currentRepo === repo)
+        .map(user => ({
+          userId: user.userId,
+          name: user.name,
+          email: user.email
+        }));
+
+      console.log("Online users with ",name," ",onlineUsers);
+      
+      // Get socket IDs for the repo
+      const repoSocketIds = getSocketIdsInRepo(repo);
+      
+      // Emit to all sockets in the repo
+      repoSocketIds.forEach(socketId => {
+        io.to(socketId).emit('getAllOnlineUsers', {
+          users: onlineUsers,
+          repo
+        });
       });
-
-      console.log(`User connected ${name} (${userid}) with socket: ${socket.id}`);
 
       // Handle file updates
       socket.on('updateFile', ({ filePath, newCode }) => {
-        // console.log("File is updated ", newCode);
-        io.emit('fileUpdated', { filePath, newCode });
+        const repoSocketIds = getSocketIdsInRepo(repo);
+        repoSocketIds.forEach(socketId => {
+          io.to(socketId).emit('fileUpdated', { 
+            filePath, 
+            newCode, 
+            repo 
+          });
+        });
       });
 
       // Track file changes
       socket.on('fileChange', ({ filePath }) => {
         const userInfo = userMap.get(userid);
-
-        console.log("Userinfo: ",userInfo);        
+        const oldRepoFilePath = `${repo}:${userInfo.currentFile}`;
+        const newRepoFilePath = `${repo}:${filePath}`;
         
-        // First, notify users in the old file about cursor removal
-        if (userInfo.currentFile && fileMap.has(userInfo.currentFile)) {
-          const currentFileUsers = fileMap.get(userInfo.currentFile);
-
-          console.log("Users from file: ",currentFileUsers);
+        if (userInfo.currentFile && repoFileMap.has(oldRepoFilePath)) {
+          const currentFileUsers = repoFileMap.get(oldRepoFilePath);
           
-          // Get socket IDs for all users in the old file
+          // Get socket IDs for users in the same file and repo
           const oldFileSockets = Array.from(currentFileUsers)
-            .map(uid => userMap.get(uid)?.socketId)
-            .filter(Boolean);
-
-         console.log("Sockets to notify: ",oldFileSockets);
-         
-      
-          // Notify users in old file about cursor removal
+            .map(uid => userMap.get(uid))
+            .filter(user => user && user.currentRepo === repo)
+            .map(user => user.socketId);
+          
           oldFileSockets.forEach(socketId => {
-            const userId = userid
-            io.to(socketId).emit('removeCursor', {userId});
+            io.to(socketId).emit('removeCursor', { userId: userid });
           });
-      
-          // Then remove user from old file's user list
+
           currentFileUsers.delete(userid);
           if (currentFileUsers.size === 0) {
-            fileMap.delete(userInfo.currentFile);
+            repoFileMap.delete(oldRepoFilePath);
           }
         }
-      
-        // Update user's current file
+
         userInfo.currentFile = filePath;
         userMap.set(userid, userInfo);
-      
-        // Add user to new file's user list
-        if (!fileMap.has(filePath)) {
-          fileMap.set(filePath, new Set());
+
+        if (!repoFileMap.has(newRepoFilePath)) {
+          repoFileMap.set(newRepoFilePath, new Set());
         }
-        fileMap.get(filePath).add(userid);
-      
-        // Log for debugging
-        // console.log(`User ${name} switched to file: ${filePath}`);
-        // console.log(`Users in file ${filePath}:`, Array.from(fileMap.get(filePath)));
+        repoFileMap.get(newRepoFilePath).add(userid);
       });
 
       // Handle cursor movements
       socket.on('cursorMove', ({ position, filePath }) => {
-        // console.log("Cursor moved to : ", position, "in file:", filePath);
+        const repoFilePath = `${repo}:${filePath}`;
         
-        if (!filePath || !fileMap.has(filePath)) return;
+        if (!filePath || !repoFileMap.has(repoFilePath)) return;
 
-        // Get all socket IDs for users in the same file
-        const fileUsers = fileMap.get(filePath);        
+        const fileUsers = repoFileMap.get(repoFilePath);
         
+        // Get socket IDs for users in the same file and repo
         const socketsInFile = Array.from(fileUsers)
-          .map(uid => userMap.get(uid)?.socketId)
-           // Exclude sender
+          .map(uid => userMap.get(uid))
+          .filter(user => user && user.currentRepo === repo)
+          .map(user => user.socketId);
         
-        // Emit cursor position only to users in the same file
         socketsInFile.forEach(socketId => {
           io.to(socketId).emit('cursorMove', {
             userId: userid,
@@ -125,40 +136,40 @@ export const setupSocket = (server) => {
           });
         });
       });
-      
 
-    } else {
-      console.log("User id not provided");
-    }
-
-    socket.on('disconnect', () => {
-      if (userid) {
-        const userInfo = userMap.get(userid);
-        
-        // Remove user from file mapping
-        if (userInfo.currentFile && fileMap.has(userInfo.currentFile)) {
-          const fileUsers = fileMap.get(userInfo.currentFile);
-          fileUsers.delete(userid);
-          if (fileUsers.size === 0) {
-            fileMap.delete(userInfo.currentFile);
+      socket.on('disconnect', () => {
+        if (userid) {
+          const userInfo = userMap.get(userid);
+          const repoFilePath = `${repo}:${userInfo.currentFile}`;
+          
+          if (userInfo.currentFile && repoFileMap.has(repoFilePath)) {
+            const fileUsers = repoFileMap.get(repoFilePath);
+            fileUsers.delete(userid);
+            if (fileUsers.size === 0) {
+              repoFileMap.delete(repoFilePath);
+            }
           }
+
+          userMap.delete(userid);
+
+          // Get remaining users and socket IDs for the repo
+          const remainingUsers = Array.from(userMap.values())
+            .filter(user => user.currentRepo === repo)
+            .map(user => ({
+              userId: user.userId,
+              name: user.name,
+              email: user.email
+            }));
+
+          const repoSocketIds = getSocketIdsInRepo(repo);
+          repoSocketIds.forEach(socketId => {
+            io.to(socketId).emit('getAllOnlineUsers', {
+              users: remainingUsers,
+              repo
+            });
+          });
         }
-
-        // Remove user from user mapping
-        userMap.delete(userid);
-
-        // Send updated user list after disconnect
-        const remainingUsers = Array.from(userMap.values()).map(user => ({
-          userId: user.userId,
-          name: user.name,
-          email: user.email
-        }));
-
-        io.emit('getAllOnlineUsers', {
-          users: remainingUsers
-        });
-      }
-      console.log(`User disconnected: ${name} (${userid})`);
-    });
+      });
+    }
   });
 };

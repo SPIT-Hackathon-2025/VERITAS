@@ -42,11 +42,11 @@
 //   const [isLoading, setIsLoading] = useState(false);
 //   const [error, setError] = useState(null);
 
-//   const BACKEND_URL = process.env.NEXT_PUBLIC_SERVER_URL;
-//   console.log(repoKey)
-//   useEffect(() => {
-//     const fetchRepo = async () => {
-//       if (!repoKey) return;
+  const BACKEND_URL = process.env.NEXT_PUBLIC_SERVER_URL;
+  console.log(repoKey)
+  useEffect(() => {
+    const fetchRepo = async () => {
+      if (!repoKey) return;
 
 //       setIsLoading(true);
 //       setError(null);

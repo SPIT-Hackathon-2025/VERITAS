@@ -239,14 +239,21 @@ export const getUserRepoController = async (req, res) => {
     try {
         const { id } = req.params; // Get user ID from request params
 
-        // Find all repositories owned by the user where `nextCommit` is null (latest version)
-        let repos = await repoModel.find({ owner: id, nextCommit: null }).select("-mainFolders");
+        // Find repositories owned by the user (latest versions only)
+        const ownedRepos = await repoModel.find({ owner: id, nextCommit: null }).select("-mainFolders");
 
-        if (!repos || repos.length === 0) {
-            return res.status(404).json({ message: "No repositories found for this user" });
+        // Find repositories where the user is a collaborator (latest versions only)
+        const collaboratedRepos = await repoModel.find({
+            collaborators: { $in: [id] }, // Check if id exists in collaborators array
+            nextCommit: null
+        }).select("-mainFolders");
+
+        // Combine results
+        const repos = [...ownedRepos, ...collaboratedRepos];
+
+        if (repos.length === 0) {
+            return res.status(204).json({ message: "No repositories found for this user" });
         }
-
-        // Populate all repositories concurrently
 
         return res.status(200).json({
             message: "User's repositories fetched successfully",
@@ -258,6 +265,7 @@ export const getUserRepoController = async (req, res) => {
         return res.status(500).json({ message: "Internal Server Error" });
     }
 };
+
 
 export const addCollaboratorsController = async (req, res) => {
     try {
@@ -613,3 +621,39 @@ const saveFilesRecursively = async (folder) => {
         }
     }
 };
+
+export const getCommitHistoryController = async (req, res) => {
+    try {
+        const id = req.params.id;
+
+        // Find the latest version of the repository by traversing back to the first commit
+        let repo = await repoModel.findById(id);
+        if (!repo) {
+            return res.status(404).json({ success: false, message: "Repository not found" });
+        }
+
+        // Traverse back to the first commit
+        while (repo.previousCommit) {
+            repo = await repoModel.findById(repo.previousCommit);
+            if (!repo) break; // Prevent infinite loop if something goes wrong
+        }
+
+        // Collect all commit IDs by traversing forward using nextCommit
+        let commitHistory = [];
+        while (repo) {
+            commitHistory.push(repo._id);
+            repo = repo.nextCommit ? await repoModel.findById(repo.nextCommit) : null;
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Commit history fetched successfully",
+            commits: commitHistory
+        });
+
+    } catch (error) {
+        console.error("Error fetching commit history:", error);
+        return res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+};
+
