@@ -1,5 +1,6 @@
 import io from 'socket.io-client';
 import { useEffect, createContext, useContext, useState } from 'react';
+import { auth } from '../hooks/firebase';
 
 const socketContext = createContext(null);
 
@@ -11,14 +12,15 @@ export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [isSocketConnected, setIsSocketConnected] = useState(false);
+  const user = localStorage.getItem('user')
+  
 
   useEffect(() => {
     // Only create socket if it doesn't exist
     if (!socket) {
-      const userid = 'id';
       const newSocket = io(process.env.NEXT_PUBLIC_SERVER_URL, {
         withCredentials: true,
-        query: { userid },
+        query: { user },
         reconnection: true,
         transports: ['websocket', 'polling'], // Try WebSocket first, fallback to polling
       });
@@ -37,7 +39,7 @@ export const SocketProvider = ({ children }) => {
 
       newSocket.on('getAllOnlineUsers', (data) => {
         console.log('Received online users:', data);
-        setOnlineUsers(data.users);
+        setOnlineUsers(data);
       });
 
       // Cleanup function

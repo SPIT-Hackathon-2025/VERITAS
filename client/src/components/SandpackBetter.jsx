@@ -36,6 +36,8 @@ function SandpackBetter() {
     if (socket) {
         socket.on('fileUpdated', ({ filePath, newCode }) => {
             // Update the file in the editor when another user makes changes
+            console.log("File is updated",JSON.stringify(newCode));
+            
             sandpack.updateFile(filePath, newCode);
         });
 
