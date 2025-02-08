@@ -15,6 +15,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+
 const RegisterForm = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -51,19 +53,35 @@ const RegisterForm = () => {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Set default displayName (Firebase does not ask for name on signup)
-      await updateProfile(user, { displayName: email.split("@")[0] });
+      // Set default displayName based on email prefix
+      const defaultDisplayName = email.split("@")[0];
+      await updateProfile(user, { displayName: defaultDisplayName });
 
-      const username = user.displayName ? user.displayName.replace(/\s+/g, "") : "user";
+      const username = defaultDisplayName.replace(/\s+/g, "");
 
+      // Store user details in localStorage
       localStorage.setItem(
         "user",
         JSON.stringify({
           uid: user.uid,
-          displayName: user.displayName,
+          displayName: defaultDisplayName,
           email: user.email,
         })
       );
+
+      // Send user data to backend
+      await fetch(`${BACKEND_URL}/api/v1/user/create-user`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: user.uid,
+          name: defaultDisplayName,
+          email: user.email,
+          password,
+        }),
+      });
 
       router.push(`/${username}/repositories`);
     } catch (err) {
@@ -81,6 +99,7 @@ const RegisterForm = () => {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
+      const isNewUser = result._tokenResponse?.isNewUser;
       const username = user.displayName ? user.displayName.replace(/\s+/g, "") : "user";
 
       localStorage.setItem(
@@ -91,6 +110,21 @@ const RegisterForm = () => {
           email: user.email,
         })
       );
+
+      if (isNewUser) {
+        await fetch(`${BACKEND_URL}/api/v1/user/create-user`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: user.displayName,
+            email: user.email,
+            password: "password",
+          }),
+        });
+      }
+
       router.push(`/${username}/repositories`);
     } catch (err) {
       setError(err.message);
@@ -141,7 +175,7 @@ const RegisterForm = () => {
               className="w-full bg-blue-500 hover:bg-blue-600"
               disabled={loading}
             >
-              {loading ? "Creating account..." : "Sign Up"}
+              {loading ? "Creating Account..." : "Sign Up"}
             </Button>
 
             <div className="relative">
@@ -156,7 +190,7 @@ const RegisterForm = () => {
             <Button
               type="button"
               onClick={handleGoogleSignIn}
-              className="w-full bg-white text-gray-900 hover:bg-gray-100 flex items-center justify-center"
+              className="w-full bg-white text-gray-900 hover:bg-gray-100"
               disabled={loading}
             >
               <img src="/google-logo.png" alt="Google" className="w-5 h-5 mr-2" />
