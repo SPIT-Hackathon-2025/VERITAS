@@ -6,11 +6,29 @@ import {
   SandpackCodeEditor,
   SandpackPreview,
   SandpackConsole,
-  useActiveCode,
   useSandpack,
 } from "@codesandbox/sandpack-react";
 import { ChevronsUpDown, Terminal, Play, Plus } from 'lucide-react';
 import { FileTree } from '@/app/components/fileTree';
+
+// This component wraps the file tree and handles Sandpack state
+const FileTreeWrapper = ({ files, activeFile, onDelete, setActiveFile}) => {
+  const { sandpack } = useSandpack();
+  
+  const handleFileClick = (newFile) => {
+    sandpack.setActiveFile(newFile);
+    setActiveFile(newFile)
+  };
+
+  return (
+    <FileTree
+      files={files}
+      activeFile={activeFile}
+      onFileClick={handleFileClick}
+      onDelete={onDelete}
+    />
+  );
+};
 
 const WebIDE = () => {
   const [files, setFiles] = useState({
@@ -29,12 +47,8 @@ const WebIDE = () => {
 }`,
   });
   
-  const [activeFile, setActiveFile] = useState("");
+  const [activeFile, setActiveFile] = useState("/src/App.js");
   const [showConsole, setShowConsole] = useState(false);
-
-  const handleFileChange = (newFile) => {
-    setActiveFile(newFile);
-  };
   
   const addNewFile = () => {
     const path = prompt("Enter file path (e.g., src/components/NewFile.js):");
@@ -86,7 +100,6 @@ const WebIDE = () => {
           activeFile: activeFile,
           visibleFiles: Object.keys(files),
           recompileMode: "immediate",
-          recompileDelay: 300,
         }}
       >
         <div className="flex-1 flex">
@@ -101,10 +114,10 @@ const WebIDE = () => {
               </button>
             </div>
             <div className="p-2">
-              <FileTree
+              <FileTreeWrapper
                 files={files}
                 activeFile={activeFile}
-                onFileClick={handleFileChange}
+                setActiveFile={setActiveFile}
                 onDelete={deleteFile}
               />
             </div>
@@ -119,7 +132,6 @@ const WebIDE = () => {
                   showInlineErrors={true}
                   wrapContent={true}
                   closableTabs={true}
-                  activeFile={activeFile}
                 />
               </div>
             </SandpackLayout>

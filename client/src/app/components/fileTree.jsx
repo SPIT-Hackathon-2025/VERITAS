@@ -14,7 +14,7 @@ const FileTreeItem = ({ name, isFolder, isOpen, onClick, onDelete, depth = 0, is
         isActive ? 'bg-blue-600' : ''
       }`}
       onClick={handleClick}
-      style={{ paddingLeft: `${depth * 12 + 8}px` }}
+      style={{ paddingLeft: `${depth * 12 + 8}px `}}
     >
       <span className="mr-2">
         {isFolder ? (
