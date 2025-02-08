@@ -150,6 +150,7 @@ function SandpackBetter() {
       });
 
       return () => {
+        socket.emit("fileChange", { filePath: '' });
         socket.off("fileUpdated");
         socket.off("getAllOnlineUsers");
         socket.off("cursorMove");

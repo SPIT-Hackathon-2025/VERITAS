@@ -5,7 +5,7 @@ dotenv.config();
 export const setupSocket = (server) => {
   const io = new Server(server, {
     cors: {
-      origin: [process.env.FRONTEND_URL, 'http://192.168.56.1/3000','http://192.168.252.104/3001','http://192.168.252.153/3000'],
+      origin: "*",
       methods: ['GET', 'POST'],
       credentials: true,
     },
@@ -70,6 +70,7 @@ export const setupSocket = (server) => {
       // Handle file updates
       socket.on('updateFile', ({ filePath, newCode }) => {
         const repoSocketIds = getSocketIdsInRepo(repo);
+        console.log("ids for which code will change: ",repoSocketIds, newCode);        
         repoSocketIds.forEach(socketId => {
           io.to(socketId).emit('fileUpdated', { 
             filePath, 
