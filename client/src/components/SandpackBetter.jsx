@@ -79,7 +79,8 @@ function SandpackBetter() {
   useEffect(() => {
     if (socket && activeFile) {
       socket.emit('fileChange', { filePath: activeFile });
-      socket.emit('removeCursor',{user})
+      socket.emit('removeCursor', { filePath: activeFile });
+      setCursors({});
     }
   }, [activeFile, socket]);
 

@@ -89,16 +89,12 @@ export const setupSocket = (server) => {
         if (!filePath || !fileMap.has(filePath)) return;
 
         // Get all socket IDs for users in the same file
-        const fileUsers = fileMap.get(filePath);
-        console.log("File users: ",fileUsers);
-
-        console.log("User map: ", userMap);
-        
+        const fileUsers = fileMap.get(filePath);        
         
         const socketsInFile = Array.from(fileUsers)
           .map(uid => userMap.get(uid)?.socketId)
            // Exclude sender
-        console.log("Sockets : ",socketsInFile);
+        
         // Emit cursor position only to users in the same file
         socketsInFile.forEach(socketId => {
           io.to(socketId).emit('cursorMove', {
@@ -111,15 +107,21 @@ export const setupSocket = (server) => {
       });
 
       socket.on('removeCursor', ({ filePath }) => {
+        console.log();
+        
         if (!filePath || !fileMap.has(filePath)) return;
       
         // Get all users in the current file
         const fileUsers = fileMap.get(filePath);
+
+        console.log(fileUsers);        
         
         // Get socket IDs for all users in the file
         const socketsInFile = Array.from(fileUsers)
           .map(uid => userMap.get(uid)?.socketId)
           .filter(Boolean); // Remove any undefined socket IDs
+
+        console.log("Sockets: ",socketsInFile);
       
         // Emit removeCursor event to all users in the file
         socketsInFile.forEach(socketId => {
