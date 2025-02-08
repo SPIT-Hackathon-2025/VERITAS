@@ -93,6 +93,7 @@ const LoginForm = () => {
 
     // If new user, send data to backend
     if (isNewUser) {
+      console.log(user.uid)
       await fetch(`${BACKEND_URL}/api/v1/user/create-user`, {
         method: "POST",
         headers: {

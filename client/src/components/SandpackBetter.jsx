@@ -29,13 +29,15 @@ function SandpackBetter() {
   const updateCodeInBackend = (filePath, newCode) => {
     // Assuming you have a socket function here to send code updates
     if(socket)
-    socket.emit("updateFile", { filePath, newCode });
+      socket.emit("updateFile", { filePath, newCode });
   };
 
   useEffect(() => {
     if (socket) {
         socket.on('fileUpdated', ({ filePath, newCode }) => {
             // Update the file in the editor when another user makes changes
+            console.log("File is updated",JSON.stringify(newCode));
+            
             sandpack.updateFile(filePath, newCode);
         });
 
