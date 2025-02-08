@@ -26,6 +26,7 @@ export const SocketProvider = ({ children }) => {
       newSocket.on('connect', () => {
         console.log('Socket connected:', newSocket.id);
         setIsSocketConnected(true);
+        // socket.emit('fileChange','')
         setSocket(newSocket);
       });
 

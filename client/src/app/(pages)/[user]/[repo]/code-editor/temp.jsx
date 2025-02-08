@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import SandpackBetter from "@/components/SandpackBetter";
 import { useSearchParams } from "next/navigation"; // ✅ Use next/navigation instead of next/router
 import { SocketProvider } from "@/app/context/socket";
-
+import Navbar from "@/components/code-editor/ide-navbar";
 // Utility function to transform repository data
 const transformRepoToFiles = (repo) => {
   const files = {};
@@ -27,7 +27,9 @@ const transformRepoToFiles = (repo) => {
 
   if (repo.mainFolders && Array.isArray(repo.mainFolders)) {
     repo.mainFolders.forEach((folder) => processNode(folder));
+    console.log(repo.mainFolders)
   }
+  console.log(files)
 
   return files;
 };
@@ -53,9 +55,12 @@ const MySandpackComponent = () => {
         const response = await fetch(`${BACKEND_URL}/api/v1/repo/get-repo/${repoKey}`);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
+        console.log(data)
 
         if (data.repo) {
+          console.log(transformRepoToFiles(data.repo))
           setFiles(transformRepoToFiles(data.repo));
+          console.log(data.repo)
         } else {
           throw new Error("No repository data found");
         }
@@ -92,15 +97,13 @@ const MySandpackComponent = () => {
   }
 
   return (
-    <SocketProvider>
-      <div className="h-screen flex flex-col bg-[#011627]">
-        <SandpackProvider template="react-ts" files={files} theme="dark">
-          <SandpackThemeProvider theme={nightOwl}>
-            <SandpackBetter />
-          </SandpackThemeProvider>
-        </SandpackProvider>
-      </div>
-    </SocketProvider>
+    <div className="h-screen flex flex-col bg-[#011627]">
+      <SandpackProvider template="react-ts" files={files} theme="dark">
+        <SandpackThemeProvider theme={nightOwl}>
+          <SandpackBetter className="mt-4"/>
+        </SandpackThemeProvider>
+      </SandpackProvider>
+    </div>
   );
 };
 
