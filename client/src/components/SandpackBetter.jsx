@@ -34,6 +34,9 @@ function SandpackBetter() {
   const { files, activeFile } = sandpack;
   const code = files[activeFile].code;
   const {users} = useOnlineUserStore();
+  const user = JSON.parse(localStorage.getItem('user')).uid;
+  console.log("User",user);
+  
   const editorRef = useRef(null);
   const [cursors,setCursors] = useState([])
 
@@ -57,6 +60,14 @@ function SandpackBetter() {
         }));
       });
 
+      socket.on('removeCursor', ({ userId }) => {
+        setCursors(prev => {
+          const newCursors = { ...prev };
+          delete newCursors[userId];
+          return newCursors;
+        });
+      });
+
       return () => {
         socket.off("fileUpdated");
         socket.off("getAllOnlineUsers");
@@ -68,7 +79,7 @@ function SandpackBetter() {
   useEffect(() => {
     if (socket && activeFile) {
       socket.emit('fileChange', { filePath: activeFile });
-      setCursors({})
+      socket.emit('removeCursor',{user})
     }
   }, [activeFile, socket]);
 
