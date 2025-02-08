@@ -1,22 +1,41 @@
-"use client";
 import {
   SandpackPreview,
   SandpackCodeEditor,
   useSandpack,
 } from "@codesandbox/sandpack-react";
 import { SandpackFileExplorer } from "sandpack-file-explorer";
-import { Terminal, Plus } from "lucide-react";
+import { Terminal, Plus, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSocket } from "@/app/context/socket";
 import useOnlineUserStore from "@/app/context/onlineUserStore";
 
+const OnlineUserBadge = ({ name, email }) => (
+  <div className="flex items-center gap-2 p-2 hover:bg-[#1E2D3D] rounded transition-colors">
+    <div className="relative">
+      <div className="w-8 h-8 bg-[#011627] rounded-full flex items-center justify-center border border-[#1E2D3D]">
+        <span className="text-sm text-[#5F7E97] font-medium">
+          {name.charAt(0).toUpperCase()}
+        </span>
+      </div>
+      <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-[#011627]" />
+    </div>
+    <div className="flex flex-col">
+      <span className="text-sm text-[#5F7E97] font-medium">{name}</span>
+      <span className="text-xs text-[#5F7E97] opacity-60">{email}</span>
+    </div>
+  </div>
+);
+
 function SandpackBetter() {
-  const socket = useSocket();
-  const { users, setUsers } = useOnlineUserStore(); // Zustand store for online users
+  const {socket,onlineUsers} = useSocket();
   const [showConsole, setShowConsole] = useState(false);
+  const [showOnlineUsers, setShowOnlineUsers] = useState(true);
   const { sandpack } = useSandpack();
   const { files, activeFile } = sandpack;
   const code = files[activeFile].code;
+  const {users} = useOnlineUserStore();
+
+  console.log("online users: ",users);  
 
   useEffect(() => {
     if (code) {
@@ -25,34 +44,24 @@ function SandpackBetter() {
   }, [code]);
 
   useEffect(() => {
-    console.log("Users:", users); // ✅ Debugging: Log online users
-  }, [users]);
+    if (socket) {
+      socket.on('fileUpdated', ({ filePath, newCode }) => {
+        console.log("File is updated", JSON.stringify(newCode));
+        sandpack.updateFile(filePath, newCode);
+      });
+
+      return () => {
+        socket.off("fileUpdated");
+        socket.off("getAllOnlineUsers");
+      };
+    }
+  }, [socket]);
 
   const updateCodeInBackend = (filePath, newCode) => {
     if (socket) {
       socket.emit("updateFile", { filePath, newCode });
     }
   };
-
-  useEffect(() => {
-    if (socket) {
-      socket.on("fileUpdated", ({ filePath, newCode }) => {
-        console.log("File is updated", JSON.stringify(newCode));
-        sandpack.updateFile(filePath, newCode);
-      });
-
-      // Fetch all online users from the socket
-      socket.on("getAllOnlineUsers", (onlineUsers) => {
-        console.log("Online users received:", onlineUsers);
-        setUsers(onlineUsers); // ✅ Update Zustand store with online users
-      });
-
-      return () => {
-        socket.off("fileUpdated");
-        socket.off("getAllOnlineUsers"); // Clean up listeners
-      };
-    }
-  }, [socket]);
 
   return (
     <div className="absolute inset-0 flex h-screen w-screen font-jetbrains">
@@ -67,12 +76,38 @@ function SandpackBetter() {
         <div className="flex-1 overflow-auto">
           <SandpackFileExplorer />
         </div>
+        
+        {/* Online Users Section */}
+        <div className="border-t border-[#1E2D3D]">
+          <button
+            className="w-full p-2 flex items-center justify-between gap-2 text-[#5F7E97] hover:bg-[#1E2D3D] transition-colors"
+            onClick={() => setShowOnlineUsers(!showOnlineUsers)}
+          >
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              <span className="text-sm">Online Users</span>
+            </div>
+            <span className="text-xs bg-[#1E2D3D] px-2 py-1 rounded">
+              {users.length}
+            </span>
+          </button>
+          {showOnlineUsers && Array.isArray(users) && (
+            <div className="max-h-48 overflow-y-auto border-t border-[#1E2D3D]">
+              {users.map((user) => (
+                <OnlineUserBadge
+                  key={user.userId}
+                  name={user.name}
+                  email={user.email}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Editor and Preview */}
+      {/* Rest of the existing code remains the same */}
       <div className="flex-1 flex flex-col h-full">
         <div className="flex flex-1">
-          {/* Code Editor */}
           <div className="flex-1">
             <SandpackCodeEditor
               wrapContent
@@ -83,8 +118,6 @@ function SandpackBetter() {
               style={{ height: "100%", fontFamily: "JetBrains Mono, monospace" }}
             />
           </div>
-
-          {/* Preview Panel */}
           <div className="w-1/2 border-l border-[#1E2D3D] flex flex-col">
             <div className="h-9 border-b border-[#1E2D3D] flex items-center px-4">
               <span className="text-[#5F7E97] text-sm">Preview</span>
@@ -94,24 +127,6 @@ function SandpackBetter() {
             </div>
           </div>
         </div>
-
-        {/* Online Users List */}
-        <div className="border-t border-[#1E2D3D] p-4 bg-[#011627] text-[#5F7E97]">
-          <h3 className="text-sm font-semibold mb-2">Online Users</h3>
-          <ul>
-            {users.length > 0 ? (
-              users.map((user) => (
-                <li key={user.userId} className="text-xs">
-                  {user.name} ({user.email})
-                </li>
-              ))
-            ) : (
-              <li className="text-xs">No users online</li>
-            )}
-          </ul>
-        </div>
-
-        {/* Console */}
         <div className="border-t border-[#1E2D3D]">
           <button
             className="w-full p-2 flex items-center justify-center gap-2 text-[#5F7E97] hover:bg-[#1E2D3D] transition-colors"
