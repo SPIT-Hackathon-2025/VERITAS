@@ -118,6 +118,7 @@ const EmptyState = () => (
   </div>
 );
 const RepositoryCard = ({ repo, user }) => {
+  console.log(repo)
   const router = useRouter();
   const folderCount = repo.mainFolders?.length || 0;
   const fileCount = repo.mainFolders?.reduce((acc, folder) => 
@@ -134,8 +135,8 @@ const RepositoryCard = ({ repo, user }) => {
   };
 
   const handleNavigate = () => {
-    router.push(`/${user.name}/${repo.name}/code-editor`);
-  };
+  router.push(`/${encodeURIComponent(user.displayName)}/${encodeURIComponent(repo.name)}/code-editor?repoId=${repo._id}`);
+};
 
   return (
     <div 

@@ -1,76 +1,103 @@
-"use client";
+"use client"; // Ensure this is a client component
+
 import {
   SandpackProvider,
   SandpackThemeProvider,
-  SandpackPreview,
-  SandpackCodeEditor,
-  SandpackStack,
-  SandpackLayout,
 } from "@codesandbox/sandpack-react";
 import { nightOwl } from "@codesandbox/sandpack-themes";
-import { SandpackFileExplorer } from "sandpack-file-explorer";
 import { useEffect, useState } from "react";
-import { Terminal, Play, Plus, X } from 'lucide-react';
 import SandpackBetter from "@/components/SandpackBetter";
-import { SocketProvider } from "@/app/context/socket";
+import { useSearchParams } from "next/navigation"; // ✅ Use next/navigation instead of next/router
 
+// Utility function to transform repository data
+const transformRepoToFiles = (repo) => {
+  const files = {};
+
+  const processNode = (node, currentPath = "/src") => {
+    if (node.isFile) {
+      files[`${currentPath}/${node.name}`] = node.content || "";
+    } else {
+      const newPath = `${currentPath}/${node.name}`;
+      if (node.children && Array.isArray(node.children)) {
+        node.children.forEach((child) => processNode(child, newPath));
+      }
+    }
+  };
+
+  if (repo.mainFolders && Array.isArray(repo.mainFolders)) {
+    repo.mainFolders.forEach((folder) => processNode(folder));
+  }
+
+  return files;
+};
 
 const MySandpackComponent = () => {
-  const [files, setFiles] = useState({
-    "/src/index.js": `export default function App() {
-      return <h1>Hello World</h1>
-    }`,
-    "/src/components/Button.js": `export default function Button({ children }) {
-      return <button className="px-4 py-2 bg-blue-500 rounded">{children}</button>
-    }`,
-    "/src/components/button/newButton.js": `export default function Button({ children }) {
-      return <button className="px-4 py-2 bg-blue-500 rounded">{children}</button>
-    }`,
-    "/src/styles/main.css": `body {
-      margin: 0;
-      padding: 1rem;
-    }`,
-  });
+  const searchParams = useSearchParams(); // ✅ Replaces useRouter()
+  const repoKey = searchParams.get("repoId"); // ✅ Get repoKey from URL query
+  
+  const [files, setFiles] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
 
+  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+  console.log(repoKey)
   useEffect(() => {
-    console.log(files);
-  }, [files]);
+    const fetchRepo = async () => {
+      if (!repoKey) return;
 
-  const [activeFile, setActiveFile] = useState("/src/App.js");
-  const [showConsole, setShowConsole] = useState(false);
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/v1/get-repo/${repoKey}`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+        const data = await response.json();
+        if (data.repo) {
+          setFiles(transformRepoToFiles(data.repo));
+        } else {
+          throw new Error("No repository data found");
+        }
+      } catch (error) {
+        console.error("Error fetching repository:", error);
+        setError(error.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchRepo();
+  }, [repoKey]);
+
+  if (error) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-[#011627] text-white">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Error Loading Repository</h2>
+          <p className="text-red-400">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-[#011627] text-white">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Loading Repository...</h2>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <SocketProvider>
-      <div className="h-screen flex flex-col bg-[#011627]">
-        {/* Header */}
-        {/* <div className="h-12 border-b border-[#1E2D3D] flex items-center justify-between px-4">
-          <div className="flex items-center space-x-4">
-            <h1 className="text-white font-medium">Sandpack Editor</h1>
-          </div>
-          <div className="flex items-center space-x-3">
-            <button className="px-3 py-1.5 bg-[#0088CC] text-white rounded-md text-sm flex items-center gap-2 hover:bg-[#0099DD] transition-colors">
-              <Play className="w-4 h-4" />
-              Run
-            </button>
-          </div>
-        </div> */}
-
-        <SandpackProvider
-          template="react-ts"
-          files={files}
-          theme="dark"
-          options={{
-            visibleFiles: Object.keys(files),
-            recompileMode: "immediate",
-            showNavigator: true,
-          }}
-        >
-          <SandpackThemeProvider theme={nightOwl}>
-            <SandpackBetter/>
-          </SandpackThemeProvider>
-        </SandpackProvider>
-      </div>
-    </SocketProvider> 
+    <div className="h-screen flex flex-col bg-[#011627]">
+      <SandpackProvider template="react-ts" files={files} theme="dark">
+        <SandpackThemeProvider theme={nightOwl}>
+          <SandpackBetter />
+        </SandpackThemeProvider>
+      </SandpackProvider>
+    </div>
   );
 };
 
