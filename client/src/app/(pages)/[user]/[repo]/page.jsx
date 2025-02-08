@@ -10,6 +10,8 @@ import {
 import { nightOwl } from "@codesandbox/sandpack-themes";
 import { SandpackFileExplorer } from "sandpack-file-explorer";
 import { useEffect, useState } from "react";
+import { Terminal, Play, Plus, X } from 'lucide-react';
+import SandpackBetter from "@/app/components/SandpackBetter";
 
 const MySandpackComponent = () => {
   const [files, setFiles] = useState({
@@ -27,63 +29,44 @@ const MySandpackComponent = () => {
       padding: 1rem;
     }`,
   });
-  // const { sandpack } = useSandpack();
+
   useEffect(() => {
     console.log(files);
   }, [files]);
+
   const [activeFile, setActiveFile] = useState("/src/App.js");
   const [showConsole, setShowConsole] = useState(false);
+
   return (
-    <SandpackProvider
-      template="react-ts"
-      files={files}
-      theme="dark"
-      options={{
-        visibleFiles: Object.keys(files),
-        recompileMode: "immediate",
-      }}
-    >
-      <SandpackThemeProvider theme={nightOwl}>
-        <SandpackStack>
-          <SandpackLayout>
-            <div
-              style={{
-                display: "flex",
-                width: "100%",
-                minHeight: "300px",
-                maxHeight: "500px",
-                backgroundColor: `var(--sp-colors-surface1)`,
-              }}
-            >
-              <div
-                style={{
-                  minWidth: 150,
-                  maxWidth: "300px",
-                  overflow: "hidden",
-                }}
-              >
-                <SandpackFileExplorer />
-              </div>
-              <div style={{ flex: "min-content" }}>
-                <SandpackCodeEditor
-                  wrapContent
-                  style={{
-                    minHeight: "100%",
-                    maxHeight: "100%",
-                    overflow: "auto",
-                  }}
-                  showTabs
-                  closableTabs
-                  showInlineErrors
-                  showLineNumbers
-                />
-              </div>
-            </div>
-            <SandpackPreview />
-          </SandpackLayout>
-        </SandpackStack>
-      </SandpackThemeProvider>
-    </SandpackProvider>
+    <div className="h-screen flex flex-col bg-[#011627]">
+      {/* Header */}
+      <div className="h-12 border-b border-[#1E2D3D] flex items-center justify-between px-4">
+        <div className="flex items-center space-x-4">
+          <h1 className="text-white font-medium">Sandpack Editor</h1>
+        </div>
+        <div className="flex items-center space-x-3">
+          <button className="px-3 py-1.5 bg-[#0088CC] text-white rounded-md text-sm flex items-center gap-2 hover:bg-[#0099DD] transition-colors">
+            <Play className="w-4 h-4" />
+            Run
+          </button>
+        </div>
+      </div>
+
+      <SandpackProvider
+        template="react-ts"
+        files={files}
+        theme="dark"
+        options={{
+          visibleFiles: Object.keys(files),
+          recompileMode: "immediate",
+        }}
+      >
+        <SandpackThemeProvider theme={nightOwl}>
+          <SandpackBetter/>
+        </SandpackThemeProvider>
+      </SandpackProvider>
+    </div>
   );
 };
+
 export default MySandpackComponent;
