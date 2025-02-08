@@ -55,6 +55,16 @@ export const setupSocket = (server) => {
       console.log("User id not provided");
     }
 
+    socket.on('cursorMove', ({ position }) => {
+        // Broadcast cursor position to all other clients
+        console.log("Cursor moved to : ",position);        
+        socket.emit('cursorMove', {
+          userId: userid,
+          position,
+          name: name
+        });
+      });
+
     socket.on('disconnect', () => {
       if (userid) {
         userMap.delete(userid);

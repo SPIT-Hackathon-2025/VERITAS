@@ -5,7 +5,7 @@ import {
 } from "@codesandbox/sandpack-react";
 import { SandpackFileExplorer } from "sandpack-file-explorer";
 import { Terminal, Plus, Users } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSocket } from "@/app/context/socket";
 import useOnlineUserStore from "@/app/context/onlineUserStore";
 
@@ -34,8 +34,8 @@ function SandpackBetter() {
   const { files, activeFile } = sandpack;
   const code = files[activeFile].code;
   const {users} = useOnlineUserStore();
-
-  console.log("online users: ",users);  
+  const editorRef = useRef(null);
+  const [cursors,setCursors] = useState([])
 
   useEffect(() => {
     if (code) {
@@ -50,6 +50,13 @@ function SandpackBetter() {
         sandpack.updateFile(filePath, newCode);
       });
 
+      socket.on('cursorMove', ({ userId, position, name }) => {
+        setCursors(prev => ({
+          ...prev,
+          [userId]: { position, name }
+        }));
+      });
+
       return () => {
         socket.off("fileUpdated");
         socket.off("getAllOnlineUsers");
@@ -62,6 +69,62 @@ function SandpackBetter() {
       socket.emit("updateFile", { filePath, newCode });
     }
   };
+
+  const handleCursorMove = (event) => {
+    // if (!socket || !editorRef.current) return;
+
+    const editor = editorRef.current;
+    const rect = editor.getBoundingClientRect();
+  
+    const position = {
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top
+    };
+
+    console.log(position);    
+
+    socket.emit('cursorMove', { position });
+  };
+
+  const getUserColor = (userId) => {
+    const colors = [
+      '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4',
+      '#FFEEAD', '#D4A5A5', '#9B59B6', '#3498DB'
+    ];
+    return colors[parseInt(userId, 16) % colors.length];
+  };
+
+  const RemoteCursor = ({ color, position, username }) => (
+    <div
+      style={{
+        position: 'absolute',
+        left: position.x,
+        top: position.y,
+        pointerEvents: 'none',
+        zIndex: 50,
+      }}
+    >
+      <div
+        style={{
+          width: 2,
+          height: 15,
+          background: color,
+        }}
+      />
+      <div
+        style={{
+          background: color,
+          padding: '2px 6px',
+          borderRadius: '2px',
+          fontSize: '12px',
+          color: 'white',
+          marginTop: '-2px',
+        }}
+      >
+        {username}
+      </div>
+    </div>
+  );
 
   return (
     <div className="absolute inset-0 flex h-screen w-screen font-jetbrains">
@@ -109,14 +172,27 @@ function SandpackBetter() {
       <div className="flex-1 flex flex-col h-full">
         <div className="flex flex-1">
           <div className="flex-1">
-            <SandpackCodeEditor
-              wrapContent
-              showTabs
-              closableTabs
-              showInlineErrors
-              showLineNumbers
-              style={{ height: "100%", fontFamily: "JetBrains Mono, monospace" }}
-            />
+            <div className="flex-1 relative" 
+            ref={editorRef}
+            onMouseDown={handleCursorMove}
+            >
+              <SandpackCodeEditor
+                wrapContent
+                showTabs
+                closableTabs
+                showInlineErrors
+                showLineNumbers
+                style={{ height: "100%", fontFamily: "JetBrains Mono, monospace" }}
+              />
+              {Object.entries(cursors).map(([userId, cursor]) => (
+                <RemoteCursor
+                  key={userId}
+                  color={getUserColor(userId)}
+                  position={cursor.position}
+                  username={cursor.name}
+                />
+              ))}
+            </div>
           </div>
           <div className="w-1/2 border-l border-[#1E2D3D] flex flex-col">
             <div className="h-9 border-b border-[#1E2D3D] flex items-center px-4">
