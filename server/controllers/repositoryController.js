@@ -613,5 +613,3 @@ const saveFilesRecursively = async (folder) => {
         }
     }
 };
-
-
