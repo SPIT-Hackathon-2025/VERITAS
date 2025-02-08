@@ -74,6 +74,13 @@ function SandpackBetter() {
     return searchFolders(repo?.repo?.mainFolders, target);
   }
 
+  const updateCodeInBackend = (filePath, newCode) => {
+    if (socket) {
+      console.log(newCode, filePath);
+      socket.emit("updateFile", { filePath, newCode });
+    }
+  };
+
   useEffect(() => {
     if (code) {
       updateCodeInBackend(activeFile, code);
@@ -84,9 +91,7 @@ function SandpackBetter() {
     if (socket) {
       socket.on('fileUpdated', ({ filePath, newCode, repo }) => {
         // Only update if the file update is for our repo
-        if (repo === socket.handshake.query.repo) {
           sandpack.updateFile(filePath, newCode);
-        }
       });
 
       socket.on("cursorMove", ({ userId, position, name }) => {
@@ -106,9 +111,7 @@ function SandpackBetter() {
 
       socket.on('getAllOnlineUsers', ({ users, repo }) => {
         // Only update users if the update is for our repo
-        if (repo === socket.handshake.query.repo) {
           useOnlineUserStore.setState({ users });
-        }
       });
 
       return () => {
@@ -128,16 +131,6 @@ function SandpackBetter() {
     }
   }, [activeFile, socket]);
   
-
-  const updateCodeInBackend = (filePath, newCode) => {
-    console.log("here");
-
-    if (socket) {
-      console.log(newCode, filePath);
-
-      socket.emit("updateFile", { filePath, newCode });
-    }
-  };
 
   const handleCursorMove = (event) => {
     if (!socket || !editorRef.current) return;
