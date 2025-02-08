@@ -7,12 +7,14 @@ import { SocketProvider } from "./context/socket"
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between">
-      <HeroSection />
-      <FeaturesSection />
-      <FeedbackSection />
-      <Footer/>
-    </main>
+    <SocketProvider>
+      <main className="flex min-h-screen flex-col items-center justify-between">
+        <HeroSection />
+        <FeaturesSection />
+        <FeedbackSection />
+        <Footer/>
+      </main>
+    </SocketProvider>
   )
 }
 

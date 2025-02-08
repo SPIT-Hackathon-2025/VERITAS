@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser'
 import 'colors'
 import { dbConnect } from './database/dbConnect.js'
 import { Server } from 'socket.io';
+import http from 'http'
 
 dotenv.config();
 
@@ -12,7 +13,16 @@ dbConnect();
 
 const app = express();
 
-//Socket io
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(cookieParser());
+app.use(cors({
+    origin: process.env.FRONTEND_URL,
+    credentials: true,
+    methods: ['GET', 'PUT', 'POST', 'DELETE', 'PATCH']
+}));
+
+//socket io
 const server = http.createServer(app);
 
 const io = new Server(server, {
@@ -41,7 +51,7 @@ const fileSystem = {
   
   // Listen for connections
   io.on('connection', (socket) => {
-    console.log('A user connected');
+    console.log(socket,' connected');
   
     // Send initial file system to the connected client
     socket.emit('initialFileSystem', fileSystem);
@@ -58,20 +68,6 @@ const fileSystem = {
         console.log('File not found');
       }
     });
-
-      // Listen for file updates from other users
-    useEffect(() => {
-        socket.on("fileUpdated", ({ filePath, newCode }) => {
-        // Update the file in the editor when another user makes changes
-        sandpack.updateFile(filePath, newCode);
-        });
-
-        // Cleanup the listener when the component is unmounted
-        return () => {
-        socket.off("fileUpdated");
-        };
-    }, [sandpack]);
-
   
     // Disconnect handler
     socket.on('disconnect', () => {
@@ -79,15 +75,6 @@ const fileSystem = {
     });
   });
 
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-app.use(cookieParser());
-app.use(cors({
-    origin: process.env.FRONTEND_URL,
-    credentials: true,
-    methods: ['GET', 'PUT', 'POST', 'DELETE', 'PATCH']
-}));
-
-app.listen(process.env.PORT, () => {
+server.listen(process.env.PORT, () => {
     console.log(`Server is running on port ${process.env.PORT}`.bgBlue.bold);
 });
