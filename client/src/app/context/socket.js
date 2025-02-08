@@ -9,11 +9,12 @@ export const useSocket=()=>{
 }
 
 export const SocketProvider=({children})=>{
+    
     const socket=useRef()
     const [isSocketConnected, setIsSocketConnected] = useState(false);
         useEffect(()=>{
             const userid='id'
-                socket.current= io('localhost',{
+                socket.current= io(process.env.NEXT_PUBLIC_SERVER_URL,{
                     withCredentials:true,
                     query:{userid},
                     reconnection:true
@@ -23,7 +24,7 @@ export const SocketProvider=({children})=>{
                     console.log("Connected to server");   
                     setIsSocketConnected(true);      
                 })
-                //clear function
+                // clear function
                 return ()=>{
                     socket.current.disconnect()
                     console.log("Socket disconnected");            
