@@ -109,6 +109,30 @@ export const setupSocket = (server) => {
           });
         });
       });
+
+      socket.on('removeCursor', ({ filePath }) => {
+        if (!filePath || !fileMap.has(filePath)) return;
+      
+        // Get all users in the current file
+        const fileUsers = fileMap.get(filePath);
+        
+        // Get socket IDs for all users in the file
+        const socketsInFile = Array.from(fileUsers)
+          .map(uid => userMap.get(uid)?.socketId)
+          .filter(Boolean); // Remove any undefined socket IDs
+      
+        // Emit removeCursor event to all users in the file
+        socketsInFile.forEach(socketId => {
+          io.to(socketId).emit('removeCursor', {
+            userId: userid,
+            filePath
+          });
+        });
+      
+        console.log(`Cursor removed for user ${name} in file ${filePath}`);
+      });
+      
+
     } else {
       console.log("User id not provided");
     }
