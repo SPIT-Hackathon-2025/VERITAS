@@ -10,7 +10,6 @@ import useOnlineUserStore from "@/app/context/onlineUserStore";
 import { useParams } from "next/navigation";
 import axios from "axios";
 
-
 // Icons from Lucide-react
 import {
   Play,
@@ -23,7 +22,7 @@ import {
   Share2,
   Plus,
   Users,
-  GitCommit
+  GitCommit,
 } from "lucide-react";
 
 // UI Components
@@ -45,21 +44,36 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_SERVER_URL;
 
 // import { useToast } from "@/components/ui/use-toast";?
 
-const handleCommit = async () => {
-  try {
-    console.log(repoState)
-  } catch (error) {
-    console.log(error)
-  }
-}
-
 function Navbar({ repoName }) {
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
+  const { repoState } = useRepoStore();
   // const { toast } = useToast();
-
+  const handleCommit = async () => {
+    try {
+      console.log(repoState);
+      const updatedFile = repoState?.repo?.mainFolders.map((file) => {
+        return { fileId: file._id, content: file.content };
+      });
+      console.log(updatedFile);
+      const commitMessage = "Commit from Web IDE";
+      const response = await fetch(
+        `${BACKEND_URL}/api/v1/repo/commit-repo/${repoState.repo._id}`,
+        {
+          updateFile: updatedFile,
+          commitMessage: commitMessage,
+        }
+      );
+      if(response){
+        console.log(response);
+        
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
   const handleShare = async () => {
     if (!email || !user?.uid || !repoName) {
       // toast({
@@ -74,19 +88,19 @@ function Navbar({ repoName }) {
 
     try {
       const response = await fetch(`${BACKEND_URL}/api/v1/repo/add-collabs`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           ownerId: user.uid,
           repoName: repoName,
-          collaborators: [email]
+          collaborators: [email],
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to share repository');
+        throw new Error("Failed to share repository");
       }
 
       // toast({
@@ -106,8 +120,6 @@ function Navbar({ repoName }) {
       setIsLoading(false);
     }
   };
-
-
 
   return (
     <>
@@ -136,7 +148,10 @@ function Navbar({ repoName }) {
           </button>
 
           {/* Commit to GitHub Button */}
-          <button className="px-3 py-1.5 bg-[#ffcc00] text-[#011627] rounded-md text-sm flex items-center gap-2 hover:bg-[#ffd633] transition-colors font-medium" onClick={handleCommit}>
+          <button
+            className="px-3 py-1.5 bg-[#ffcc00] text-[#011627] rounded-md text-sm flex items-center gap-2 hover:bg-[rgb(255,214,51)] transition-colors font-medium"
+            onClick={handleCommit}
+          >
             <GitCommit className="w-4 h-4" />
             Commit
           </button>
@@ -156,7 +171,9 @@ function Navbar({ repoName }) {
       <Dialog open={isShareOpen} onOpenChange={setIsShareOpen}>
         <DialogContent className="bg-[#011627] border border-[#1d3b53] text-[#d6deeb]">
           <DialogHeader>
-            <DialogTitle className="text-[#d6deeb]">Share Repository</DialogTitle>
+            <DialogTitle className="text-[#d6deeb]">
+              Share Repository
+            </DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
@@ -219,8 +236,8 @@ function SandpackBetter() {
   const [prevFiles, setPrevFiles] = useState(files);
   const code = files[activeFile].code;
 
-  const user = JSON.parse(localStorage.getItem('user'))?.uid;
-  const { repoState } = useRepoStore()
+  const user = JSON.parse(localStorage.getItem("user"))?.uid;
+  const { repoState } = useRepoStore();
 
   const editorRef = useRef(null);
   const [cursors, setCursors] = useState([]);
@@ -229,20 +246,22 @@ function SandpackBetter() {
   const params = useParams();
 
   useEffect(() => {
-    console.log('files', files);
+    console.log("files", files);
 
     const handleFileCreation = async (newFiles) => {
       try {
         // Make API call
         const repoId = params.repo;
-        const arr = Object.keys(newFiles).filter((key) => key.startsWith('/src/')).map((key) => {
-          return {
-            'content': files[key].code,
-            'path': key.split('/').slice(-1).join('/'),
-            'name': key.split('/').slice(-1).join('/')
-          }
-        });
-        console.log('arr', arr);
+        const arr = Object.keys(newFiles)
+          .filter((key) => key.startsWith("/src/"))
+          .map((key) => {
+            return {
+              content: files[key].code,
+              path: key.split("/").slice(-1).join("/"),
+              name: key.split("/").slice(-1).join("/"),
+            };
+          });
+        console.log("arr", arr);
         console.log(repoId);
 
         const response = await axios.post(
@@ -258,13 +277,10 @@ function SandpackBetter() {
         console.error("Error creating file:", error);
       }
     };
-    if (files)
-      handleFileCreation(files);
+    if (files) handleFileCreation(files);
 
     setPrevFiles(files);
   }, [files]);
-
-
 
   const updateCodeInBackend = (filePath, newCode) => {
     if (socket) {
