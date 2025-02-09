@@ -217,21 +217,22 @@ function SandpackBetter() {
     const handleFileCreation = async (newFiles) => {
       try {
         // Make API call
-        const repoId = params.repoId;
-        const files=Object.keys(newFiles).map((key)=>{
+        const repoId = params.repo;
+        const arr=Object.keys(newFiles).map((key)=>{
           return {
             'content':files[key],
             'path':key.split('/').slice(1).join('/'),
             'name':key.split('/').slice(-1).join('/')
           }
         });
-        console.log('arr',files);
+        console.log('arr',arr);
+        console.log(repoId);
         
         const response = await axios.post(
           `${process.env.NEXT_PUBLIC_SERVER_URL}/api/v1/file/add-files`,
           {
             repoId: repoId,
-            files: files,
+            files: arr,
           }
         );
 
@@ -240,7 +241,7 @@ function SandpackBetter() {
         console.error("Error creating file:", error);
       }
     };
-
+    if(files)
     handleFileCreation(files);
 
     setPrevFiles(files);
