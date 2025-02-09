@@ -470,9 +470,17 @@ function SandpackBetter({ setTemplate }) {
 
   const getUserColor = (userId) => {
     const colors = [
-      "#FF6B6B", "#FF9F43", "#FFD166", "#06D6A0", "#4ECDC4",
-      "#45B7D1", "#9B59B6", "#F72585", "#FFFFFF"
-    ];
+      "#E63946", // Soft Red
+      "#F4A261", // Warm Orange
+      "#E9C46A", // Muted Yellow
+      "#2A9D8F", // Teal Green
+      "#264653", // Deep Blue
+      "#6A0572", // Royal Purple
+      "#8E44AD", // Vibrant Purple
+      "#D81159", // Deep Pink
+      "#F8F9FA"  // Soft White
+    ];    
+    
     return colors[parseInt(userId, 32) % colors.length];
   };
 
