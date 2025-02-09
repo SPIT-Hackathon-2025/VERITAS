@@ -212,50 +212,38 @@ function SandpackBetter() {
   const params = useParams();
 
   useEffect(() => {
-    const handleFileCreation = async (newFiles, prevFiles) => {
+    console.log('files',files);
+    
+    const handleFileCreation = async (newFiles) => {
       try {
-        const prevKeys = Object.keys(prevFiles);
-        const newKeys = Object.keys(newFiles);
-        
-        // Find new files that weren't in the previous state
-        const addedFiles = newKeys.filter(key => !prevKeys.includes(key));
-        
-        for (const newFilePath of addedFiles) {
-          if (newFilePath.startsWith('/src/')) {
-            const path = newFilePath.split('/src/')[1];
-            const content = files[newFilePath].code;
-            const name = path.split('/').pop();
-            const repoId = params.repoId;
-
-            // Emit socket event before making API call
-            socket.emit('fileCreated', {
-              path,
-              content,
-              name,
-              repoId
-            });
-
-            // Make API call
-            const response = await axios.post(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/v1/file/create-file`, {
-              repoId,
-              path,
-              content,
-              name,
-              parentId: null
-            });
-
-            console.log("File created:", response.data);
+        // Make API call
+        const repoId = params.repo;
+        const arr=Object.keys(newFiles).filter((key)=>key.startsWith('/src/')).map((key)=>{
+          return {
+            'content':files[key].code,
+            'path':key.split('/').slice(-1).join('/'),
+            'name':key.split('/').slice(-1).join('/')
           }
-        }
+        });
+        console.log('arr',arr);
+        console.log(repoId);
+        
+        const response = await axios.post(
+          `${process.env.NEXT_PUBLIC_SERVER_URL}/api/v1/file/add-files`,
+          {
+            repoId: repoId,
+            files: arr,
+          }
+        );
+
+        console.log("File created:", response.data);
       } catch (error) {
-        console.error('Error creating file:', error);
+        console.error("Error creating file:", error);
       }
     };
+    if(files)
+    handleFileCreation(files);
 
-    if (Object.keys(files).length !== Object.keys(prevFiles).length) {
-      handleFileCreation(files, prevFiles);
-    }
-    
     setPrevFiles(files);
   }, [files]);
 
@@ -277,10 +265,10 @@ function SandpackBetter() {
     if (socket) {
       socket.on("fileUpdated", ({ filePath, newCode, repo }) => {
         // Only update if the file update is for our repo
-          sandpack.updateFile(filePath, newCode);
+        sandpack.updateFile(filePath, newCode);
       });
-      
-      socket.on('fileCreated', ({ path, content, name, repoId }) => {
+
+      socket.on("fileCreated", ({ path, content, name, repoId }) => {
         // Update Sandpack with the new file
         const fullPath = `/src/${path}`;
         if (!files[fullPath]) {
@@ -305,12 +293,12 @@ function SandpackBetter() {
 
       socket.on("getAllOnlineUsers", ({ users, repo }) => {
         // Only update users if the update is for our repo
-          useOnlineUserStore.setState({ users });
+        useOnlineUserStore.setState({ users });
       });
 
       return () => {
-        socket.emit("fileChange", { filePath: '' });
-        socket.off('fileCreated');
+        socket.emit("fileChange", { filePath: "" });
+        socket.off("fileCreated");
         socket.off("fileUpdated");
         socket.off("getAllOnlineUsers");
         socket.off("cursorMove");
