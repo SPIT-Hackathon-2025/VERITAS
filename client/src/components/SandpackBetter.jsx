@@ -66,9 +66,9 @@ function Navbar({ repoName }) {
           commitMessage: commitMessage,
         }
       );
-      if(response){
+      if (response) {
         console.log(response);
-        
+
       }
     } catch (error) {
       console.log(error);
@@ -146,6 +146,8 @@ function Navbar({ repoName }) {
     }
   };
 
+  const [isOpen, setIsOpen] = useState(false);
+
   return (
     <>
       <nav className="h-12 bg-[#011627] border-b border-[#1d3b53] flex items-center justify-between px-4">
@@ -158,7 +160,7 @@ function Navbar({ repoName }) {
             <button className="p-1.5 hover:bg-[#1d3b53] rounded-md transition-colors group">
               <Folder className="w-4 h-4 text-[#82aaff] group-hover:text-[#c5e4fd]" />
             </button>
-            <button className="p-1.5 hover:bg-[#1d3b53] rounded-md transition-colors group">
+            <button className="p-1.5 hover:bg-[#1d3b53] rounded-md transition-colors group" onClick={() => setIsOpen(true)}>
               <Search className="w-4 h-4 text-[#82aaff] group-hover:text-[#c5e4fd]" />
             </button>
             <button className="p-1.5 hover:bg-[#1d3b53] rounded-md transition-colors group" onClick={() => {
@@ -195,6 +197,34 @@ function Navbar({ repoName }) {
           </button>
         </div>
       </nav>
+
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="max-w-md bg-[#1E293B] text-white border border-[#334155] shadow-lg rounded-lg">
+          <DialogHeader className="text-lg font-semibold text-[#d6deeb]">
+            Enter Message
+          </DialogHeader>
+
+          <Input
+            className="bg-[#0F172A] text-white px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-400"
+            placeholder="Type a message..."
+          />
+
+          <DialogFooter className="flex justify-end gap-2">
+            {/* Fix: Close modal on cancel */}
+            <Button
+              variant="ghost"
+              className="text-gray-400 hover:bg-gray-700"
+              onClick={() => setIsOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button className="bg-blue-500 text-white px-4 py-2 rounded-lg">
+              Send
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       <Dialog open={isShareOpen} onOpenChange={setIsShareOpen}>
         <DialogContent className="bg-[#011627] border border-[#1d3b53] text-[#d6deeb]">
