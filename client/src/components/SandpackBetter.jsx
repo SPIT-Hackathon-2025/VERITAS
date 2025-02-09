@@ -218,10 +218,10 @@ function SandpackBetter() {
       try {
         // Make API call
         const repoId = params.repo;
-        const arr=Object.keys(newFiles).map((key)=>{
+        const arr=Object.keys(newFiles).filter((key)=>key.startsWith('/src/')).map((key)=>{
           return {
-            'content':files[key],
-            'path':key.split('/').slice(1).join('/'),
+            'content':files[key].code,
+            'path':key.split('/').slice(-1).join('/'),
             'name':key.split('/').slice(-1).join('/')
           }
         });
