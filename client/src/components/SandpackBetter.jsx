@@ -1,17 +1,181 @@
+import React, { useState, useEffect, useRef } from "react";
 import {
   SandpackPreview,
   SandpackCodeEditor,
   useSandpack,
 } from "@codesandbox/sandpack-react";
 import { SandpackFileExplorer } from "sandpack-file-explorer";
-import { Terminal, Plus, Users } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
 import { useSocket } from "@/app/context/socket";
 import useOnlineUserStore from "@/app/context/onlineUserStore";
 import { useParams } from "next/navigation";
-import useRepoStore from "@/app/context/repoStore";
 import axios from "axios";
 
+
+// Icons from Lucide-react
+import {
+  Play,
+  GitBranch,
+  Settings,
+  File,
+  Folder,
+  Search,
+  Terminal,
+  Share2,
+  Plus,
+  Users,
+} from "lucide-react";
+
+// UI Components
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+// import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+// import { Play, GitBranch, Settings, File, Folder, Search, Terminal, Share2 } from "lucide-react";
+// import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { useAuth } from "@/app/hooks/useAuth";
+import useRepoStore from "@/app/context/repoStore";
+const BACKEND_URL = process.env.NEXT_PUBLIC_SERVER_URL;
+
+// import { useToast } from "@/components/ui/use-toast";?
+
+function Navbar({ repoName}) {
+  const [isShareOpen, setIsShareOpen] = useState(false);
+  const [email, setEmail] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuth();
+  // const { toast } = useToast();
+
+  const handleShare = async () => {
+    if (!email || !user?.uid || !repoName) {
+      // toast({
+      //   title: "Error",
+      //   description: "Missing required information",
+      //   variant: "destructive",
+      // });
+      return;
+    }
+
+    setIsLoading(true);
+    
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/v1/repo/add-collabs`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ownerId: user.uid,
+          repoName: repoName,
+          collaborators: [email]
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to share repository');
+      }
+
+      // toast({
+      //   title: "Success",
+      //   description: `Repository shared with ${email}`,
+      // });
+
+      setEmail("");
+      setIsShareOpen(false);
+    } catch (error) {
+      // toast({
+      //   title: "Error",
+      //   description: error.message || "Failed to share repository",
+      //   variant: "destructive",
+      // });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <nav className="h-12 bg-[#011627] border-b border-[#1d3b53] flex items-center justify-between px-4">
+        <div className="flex items-center space-x-4">
+          <h1 className="text-[#d6deeb] font-medium">Web IDE</h1>
+          <div className="flex space-x-2">
+            <button className="p-1.5 hover:bg-[#1d3b53] rounded-md transition-colors group">
+              <File className="w-4 h-4 text-[#82aaff] group-hover:text-[#c5e4fd]" />
+            </button>
+            <button className="p-1.5 hover:bg-[#1d3b53] rounded-md transition-colors group">
+              <Folder className="w-4 h-4 text-[#82aaff] group-hover:text-[#c5e4fd]" />
+            </button>
+            <button className="p-1.5 hover:bg-[#1d3b53] rounded-md transition-colors group">
+              <Search className="w-4 h-4 text-[#82aaff] group-hover:text-[#c5e4fd]" />
+            </button>
+            <button className="p-1.5 hover:bg-[#1d3b53] rounded-md transition-colors group">
+              <GitBranch className="w-4 h-4 text-[#82aaff] group-hover:text-[#c5e4fd]" />
+            </button>
+          </div>
+        </div>
+        <div className="flex items-center space-x-4">
+          <button className="px-3 py-1.5 bg-[#7fdbca] text-[#011627] rounded-md text-sm flex items-center gap-2 hover:bg-[#9ce0d0] transition-colors font-medium">
+            <Play className="w-4 h-4" />
+            Run
+          </button>
+          
+          <button
+            className="p-1.5 hover:bg-[#1d3b53] rounded-md transition-colors group"
+            onClick={() => setIsShareOpen(true)}
+          >
+            <Share2 className="w-4 h-4 text-[#82aaff] group-hover:text-[#c5e4fd]" />
+          </button>
+          <button className="p-1.5 hover:bg-[#1d3b53] rounded-md transition-colors group">
+            <Settings className="w-4 h-4 text-[#82aaff] group-hover:text-[#c5e4fd]" />
+          </button>
+        </div>
+      </nav>
+
+      <Dialog open={isShareOpen} onOpenChange={setIsShareOpen}>
+        <DialogContent className="bg-[#011627] border border-[#1d3b53] text-[#d6deeb]">
+          <DialogHeader>
+            <DialogTitle className="text-[#d6deeb]">Share Repository</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Input
+                id="email"
+                placeholder="Enter email address"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="bg-[#1d3b53] border-[#1d3b53] text-[#d6deeb] placeholder:text-[#4f6479]"
+                disabled={isLoading}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsShareOpen(false)}
+              className="bg-transparent border-[#1d3b53] text-[#d6deeb] hover:bg-[#1d3b53] hover:text-[#c5e4fd]"
+              disabled={isLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleShare}
+              className="bg-[#7fdbca] text-[#011627] hover:bg-[#9ce0d0]"
+              disabled={isLoading}
+            >
+              {isLoading ? "Sharing..." : "Share"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
 const OnlineUserBadge = ({ name, email }) => (
   <div className="flex items-center gap-2 p-2 hover:bg-[#1E2D3D] rounded transition-colors">
     <div className="relative">
@@ -37,6 +201,13 @@ function SandpackBetter() {
   const { files, activeFile } = sandpack;
   const [prevFiles, setPrevFiles] = useState(files);
   const code = files[activeFile].code;
+ 
+  const user = JSON.parse(localStorage.getItem('user'))?.uid;
+  const {repoState}=useRepoStore()
+
+  const editorRef = useRef(null);
+  const [cursors, setCursors] = useState([]);
+
   const { users } = useOnlineUserStore();
   const params = useParams();
 
@@ -88,12 +259,10 @@ function SandpackBetter() {
     setPrevFiles(files);
   }, [files]);
 
-  const editorRef = useRef(null);
-  const [cursors, setCursors] = useState([]);
+
 
   const updateCodeInBackend = (filePath, newCode) => {
     if (socket) {
-      console.log(newCode, filePath);
       socket.emit("updateFile", { filePath, newCode });
     }
   };
@@ -153,7 +322,6 @@ function SandpackBetter() {
   useEffect(() => {
     if (socket && activeFile) {
       socket.emit("fileChange", { filePath: activeFile });
-      // socket.emit('removeCursor', { filePath: activeFile });
       setCursors({});
     }
   }, [activeFile, socket]);
@@ -169,11 +337,9 @@ function SandpackBetter() {
       y: event.clientY - rect.top,
     };
 
-    console.log(position);
-
     socket.emit("cursorMove", {
       position,
-      filePath: activeFile, // Add this line
+      filePath: activeFile,
     });
   };
 
@@ -224,103 +390,108 @@ function SandpackBetter() {
       </div>
     </div>
   );
-
+ 
   return (
-    <div className="absolute inset-0 flex h-screen w-screen font-jetbrains">
-      {/* File Explorer */}
-      <div className="w-64 border-r border-[#1E2D3D] flex flex-col h-full">
-        <div className="p-3 border-b border-[#1E2D3D] flex justify-between items-center">
-          <span className="text-[#5F7E97] font-medium text-sm">Explorer</span>
-          <button className="p-1 hover:bg-[#1E2D3D] rounded">
-            <Plus className="w-4 h-4 text-[#5F7E97]" />
-          </button>
-        </div>
-        <div className="flex-1 overflow-auto">
-          <SandpackFileExplorer />
-        </div>
+    <div className="flex flex-col h-screen bg-[#011627] font-jetbrains">
+      <Navbar repoName={repoState.repo.name}/>
+      <div className="flex-1 flex overflow-hidden">
+        {/* File Explorer */}
+        <div className="w-64 border-r border-[#1E2D3D] flex flex-col">
+          <div className="p-3 border-b border-[#1E2D3D] flex justify-between items-center">
+            <span className="text-[#5F7E97] font-medium text-sm">Explorer</span>
+            <button className="p-1 hover:bg-[#1E2D3D] rounded">
+              <Plus className="w-4 h-4 text-[#5F7E97]" />
+            </button>
+          </div>
+          <div className="flex-1 overflow-auto">
+            <SandpackFileExplorer />
+          </div>
 
-        {/* Online Users Section */}
-        <div className="border-t border-[#1E2D3D]">
-          <button
-            className="w-full p-2 flex items-center justify-between gap-2 text-[#5F7E97] hover:bg-[#1E2D3D] transition-colors"
-            onClick={() => setShowOnlineUsers(!showOnlineUsers)}
-          >
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              <span className="text-sm">Online Users</span>
-            </div>
-            <span className="text-xs bg-[#1E2D3D] px-2 py-1 rounded">
-              {users.length}
-            </span>
-          </button>
-          {showOnlineUsers && Array.isArray(users) && (
-            <div className="max-h-48 overflow-y-auto border-t border-[#1E2D3D]">
-              {users.map((user) => (
-                <OnlineUserBadge
-                  key={user.userId}
-                  name={user.name}
-                  email={user.email}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Rest of the existing code remains the same */}
-      <div className="flex-1 flex flex-col h-full">
-        <div className="flex flex-1">
-          <div className="flex-1">
-            <div
-              className="flex-1 relative"
-              ref={editorRef}
-              onMouseDown={handleCursorMove}
+          {/* Online Users Section */}
+          <div className="border-t border-[#1E2D3D]">
+            <button
+              className="w-full p-2 flex items-center justify-between gap-2 text-[#5F7E97] hover:bg-[#1E2D3D] transition-colors"
+              onClick={() => setShowOnlineUsers(!showOnlineUsers)}
             >
-              <SandpackCodeEditor
-                wrapContent
-                showTabs
-                closableTabs
-                showInlineErrors
-                showLineNumbers
-                style={{
-                  height: "100%",
-                  fontFamily: "JetBrains Mono, monospace",
-                }}
-              />
-              {Object.entries(cursors).map(([userId, cursor]) => (
-                <RemoteCursor
-                  key={userId}
-                  color={getUserColor(userId)}
-                  position={cursor.position}
-                  username={cursor.name}
-                />
-              ))}
-            </div>
-          </div>
-          <div className="w-1/2 border-l border-[#1E2D3D] flex flex-col">
-            <div className="h-9 border-b border-[#1E2D3D] flex items-center px-4">
-              <span className="text-[#5F7E97] text-sm">Preview</span>
-            </div>
-            <div className="flex-1">
-              <SandpackPreview style={{ height: "100%" }} />
-            </div>
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                <span className="text-sm">Online Users</span>
+              </div>
+              <span className="text-xs bg-[#1E2D3D] px-2 py-1 rounded">
+                {users.length}
+              </span>
+            </button>
+            {showOnlineUsers && Array.isArray(users) && (
+              <div className="max-h-48 overflow-y-auto border-t border-[#1E2D3D]">
+                {users.map((user) => (
+                  <OnlineUserBadge
+                    key={user.userId}
+                    name={user.name}
+                    email={user.email}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
-        <div className="border-t border-[#1E2D3D]">
-          <button
-            className="w-full p-2 flex items-center justify-center gap-2 text-[#5F7E97] hover:bg-[#1E2D3D] transition-colors"
-            onClick={() => setShowConsole(!showConsole)}
-          >
-            <Terminal className="w-4 h-4" />
-            <span className="text-sm">Console</span>
-          </button>
-          {showConsole && (
-            <div className="h-48 border-t border-[#1E2D3D] bg-[#011627] p-4">
-              <div className="text-[#5F7E97] text-sm">
-                Console output will appear here...
+
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col">
+          <div className="flex flex-1">
+            <div className="flex-1">
+              <div
+                className="flex-1 relative"
+                ref={editorRef}
+                onMouseDown={handleCursorMove}
+              >
+                <SandpackCodeEditor
+                  wrapContent
+                  showTabs
+                  closableTabs
+                  showInlineErrors
+                  showLineNumbers
+                  style={{
+                    height: "100%",
+                    fontFamily: "JetBrains Mono, monospace",
+                  }}
+                />
+                {Object.entries(cursors).map(([userId, cursor]) => (
+                  <RemoteCursor
+                    key={userId}
+                    color={getUserColor(userId)}
+                    position={cursor.position}
+                    username={cursor.name}
+                  />
+                ))}
               </div>
             </div>
-          )}
+            <div className="w-1/2 border-l border-[#1E2D3D] flex flex-col">
+              <div className="h-9 border-b border-[#1E2D3D] flex items-center px-4">
+                <span className="text-[#5F7E97] text-sm">Preview</span>
+              </div>
+              <div className="flex-1">
+                <SandpackPreview style={{ height: "100%" }} />
+              </div>
+            </div>
+          </div>
+
+          {/* Console Section */}
+          <div className="border-t border-[#1E2D3D]">
+            <button
+              className="w-full p-2 flex items-center justify-center gap-2 text-[#5F7E97] hover:bg-[#1E2D3D] transition-colors"
+              onClick={() => setShowConsole(!showConsole)}
+            >
+              <Terminal className="w-4 h-4" />
+              <span className="text-sm">Console</span>
+            </button>
+            {showConsole && (
+              <div className="h-48 border-t border-[#1E2D3D] bg-[#011627] p-4">
+                <div className="text-[#5F7E97] text-sm">
+                  Console output will appear here...
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
