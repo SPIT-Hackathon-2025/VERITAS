@@ -59,7 +59,7 @@ function Navbar({ repoName }) {
       });
       console.log(updatedFile);
       const commitMessage = "Commit from Web IDE";
-      const response = await fetch(
+      const response = await axios.post(
         `${BACKEND_URL}/api/v1/repo/commit-repo/${repoState.repo._id}`,
         {
           updateFile: updatedFile,
