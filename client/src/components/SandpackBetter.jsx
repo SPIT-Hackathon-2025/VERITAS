@@ -7,6 +7,9 @@ import {
 import { SandpackFileExplorer } from "sandpack-file-explorer";
 import { useSocket } from "@/app/context/socket";
 import useOnlineUserStore from "@/app/context/onlineUserStore";
+import { useParams } from "next/navigation";
+import useRepoStore from "@/app/context/repoStore";
+import axios from "axios";
 
 // Icons from Lucide-react
 import {
@@ -196,13 +199,67 @@ function SandpackBetter() {
   const [showOnlineUsers, setShowOnlineUsers] = useState(true);
   const { sandpack } = useSandpack();
   const { files, activeFile } = sandpack;
+  const [prevFiles, setPrevFiles] = useState(files);
   const code = files[activeFile].code;
-  const {users} = useOnlineUserStore();
+ 
   const user = JSON.parse(localStorage.getItem('user'))?.uid;
   const {repoState}=useRepoStore()
 
   const editorRef = useRef(null);
   const [cursors, setCursors] = useState([]);
+
+  const { users } = useOnlineUserStore();
+  const params = useParams();
+
+  useEffect(() => {
+    const handleFileCreation = async (newFiles, prevFiles) => {
+      try {
+        const prevKeys = Object.keys(prevFiles);
+        const newKeys = Object.keys(newFiles);
+        
+        // Find new files that weren't in the previous state
+        const addedFiles = newKeys.filter(key => !prevKeys.includes(key));
+        
+        for (const newFilePath of addedFiles) {
+          if (newFilePath.startsWith('/src/')) {
+            const path = newFilePath.split('/src/')[1];
+            const content = files[newFilePath].code;
+            const name = path.split('/').pop();
+            const repoId = params.repoId;
+
+            // Emit socket event before making API call
+            socket.emit('fileCreated', {
+              path,
+              content,
+              name,
+              repoId
+            });
+
+            // Make API call
+            const response = await axios.post(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/v1/file/create-file`, {
+              repoId,
+              path,
+              content,
+              name,
+              parentId: null
+            });
+
+            console.log("File created:", response.data);
+          }
+        }
+      } catch (error) {
+        console.error('Error creating file:', error);
+      }
+    };
+
+    if (Object.keys(files).length !== Object.keys(prevFiles).length) {
+      handleFileCreation(files, prevFiles);
+    }
+    
+    setPrevFiles(files);
+  }, [files]);
+
+
 
   const updateCodeInBackend = (filePath, newCode) => {
     if (socket) {
@@ -218,8 +275,17 @@ function SandpackBetter() {
 
   useEffect(() => {
     if (socket) {
-      socket.on('fileUpdated', ({ filePath, newCode }) => {
-        sandpack.updateFile(filePath, newCode);
+      socket.on("fileUpdated", ({ filePath, newCode, repo }) => {
+        // Only update if the file update is for our repo
+          sandpack.updateFile(filePath, newCode);
+      });
+      
+      socket.on('fileCreated', ({ path, content, name, repoId }) => {
+        // Update Sandpack with the new file
+        const fullPath = `/src/${path}`;
+        if (!files[fullPath]) {
+          sandpack.updateFile(fullPath, content);
+        }
       });
 
       socket.on("cursorMove", ({ userId, position, name }) => {
@@ -229,19 +295,22 @@ function SandpackBetter() {
         }));
       });
 
-      socket.on('removeCursor', ({ userId }) => {
-        setCursors(prev => {
+      socket.on("removeCursor", ({ userId }) => {
+        setCursors((prev) => {
           const newCursors = { ...prev };
           delete newCursors[userId];
           return newCursors;
         });
       });
 
-      socket.on('getAllOnlineUsers', ({ users }) => {
-        useOnlineUserStore.setState({ users });
+      socket.on("getAllOnlineUsers", ({ users, repo }) => {
+        // Only update users if the update is for our repo
+          useOnlineUserStore.setState({ users });
       });
 
       return () => {
+        socket.emit("fileChange", { filePath: '' });
+        socket.off('fileCreated');
         socket.off("fileUpdated");
         socket.off("getAllOnlineUsers");
         socket.off("cursorMove");
