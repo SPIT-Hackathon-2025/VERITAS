@@ -41,6 +41,7 @@ import { autocompletion, completionKeymap } from "@codemirror/autocomplete";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/app/hooks/useAuth";
 import useRepoStore from "@/app/context/repoStore";
+import { toast } from "react-toastify";
 const BACKEND_URL = process.env.NEXT_PUBLIC_SERVER_URL;
 
 // import { useToast } from "@/components/ui/use-toast";?
@@ -69,6 +70,7 @@ function Navbar({ repoName }) {
       );
       if (response) {
         console.log(response);
+        toast.success("Changes committed!")
       }
     } catch (error) {
       console.log(error);
