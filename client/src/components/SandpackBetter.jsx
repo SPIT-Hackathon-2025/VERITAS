@@ -247,7 +247,7 @@ function Navbar({ repoName }) {
             ) : commitHistory.length > 0 ? (
               commitHistory.map((commit, index) => (
                 <div key={index} className="border-b border-[#1d3b53] py-2">
-                  <p className="text-[#7fdbca] font-medium">Commit ID: {commit._id}</p>
+                  <p className="text-[#7fdbca] cursor-pointer font-medium">Commit ID: {commit}</p>
                 </div>
               ))
             ) : (
