@@ -75,6 +75,9 @@ const MySandpackComponent = () => {
     fetchRepo();
   }, [repoKey]);
 
+  
+    const [template,setTemplate]=useState("react-ts");
+
   if (error) {
     return (
       <div className="h-screen flex items-center justify-center bg-[#011627] text-white">
@@ -99,9 +102,9 @@ const MySandpackComponent = () => {
   return (
     <SocketProvider>
     <div className="h-screen flex flex-col bg-[#011627]">
-      <SandpackProvider template="react-ts" files={files} theme="dark">
+      <SandpackProvider template={template} files={files} theme="dark">
         <SandpackThemeProvider theme={nightOwl}>
-          <SandpackBetter/>
+          <SandpackBetter setTemplate={setTemplate}/>
         </SandpackThemeProvider>
       </SandpackProvider>
     </div>
