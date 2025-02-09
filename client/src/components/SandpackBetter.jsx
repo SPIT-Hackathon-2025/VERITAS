@@ -572,10 +572,11 @@ function SandpackBetter({setTemplate}) {
             </div>
             <div className="w-1/2 border-l border-[#1E2D3D] flex flex-col">
               <div className="h-9 border-b border-[#1E2D3D] flex items-center px-4">
-                <span className="text-[#5F7E97] text-sm">Preview</span>
+                <span className="text-[#5F7E97] text-sm">Preview</span> 
               </div>
               <div className="flex-1">
                 <SandpackPreview style={{ height: "100%" }} />
+                {/* <h1>{code}</h1> */}
               </div>
             </div>
           </div>
