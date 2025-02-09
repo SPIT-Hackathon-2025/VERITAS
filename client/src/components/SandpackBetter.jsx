@@ -49,7 +49,7 @@ function Navbar({ repoName }) {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
-  const { repoState } = useRepoStore();
+  const { repoState } = useRepoStore()
   // const { toast } = useToast();
   const handleCommit = async () => {
     try {
@@ -121,6 +121,31 @@ function Navbar({ repoName }) {
     }
   };
 
+  const [isCommitHistoryOpen, setIsCommitHistoryOpen] = useState(false);
+  const [commitHistory, setCommitHistory] = useState([]);
+  const [isLoadingCommits, setIsLoadingCommits] = useState(false);
+
+  const fetchCommitHistory = async () => {
+    console.log(repoState)
+    if (!repoState.repo._id) return;
+
+    setIsLoadingCommits(true);
+
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/v1/repo/get-commit-history/${repoState.repo._id}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch commit history");
+      }
+
+      const data = await response.json();
+      setCommitHistory(data.commits); // Assuming the API returns { commits: [...] }
+    } catch (error) {
+      console.error("Error fetching commit history:", error);
+    } finally {
+      setIsLoadingCommits(false);
+    }
+  };
+
   return (
     <>
       <nav className="h-12 bg-[#011627] border-b border-[#1d3b53] flex items-center justify-between px-4">
@@ -136,7 +161,10 @@ function Navbar({ repoName }) {
             <button className="p-1.5 hover:bg-[#1d3b53] rounded-md transition-colors group">
               <Search className="w-4 h-4 text-[#82aaff] group-hover:text-[#c5e4fd]" />
             </button>
-            <button className="p-1.5 hover:bg-[#1d3b53] rounded-md transition-colors group">
+            <button className="p-1.5 hover:bg-[#1d3b53] rounded-md transition-colors group" onClick={() => {
+              setIsCommitHistoryOpen(true);
+              fetchCommitHistory(); // Fetch commits when opening the dialog
+            }}>
               <GitBranch className="w-4 h-4 text-[#82aaff] group-hover:text-[#c5e4fd]" />
             </button>
           </div>
@@ -207,6 +235,37 @@ function Navbar({ repoName }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={isCommitHistoryOpen} onOpenChange={setIsCommitHistoryOpen}>
+        <DialogContent className="bg-[#011627] border border-[#1d3b53] text-[#d6deeb]">
+          <DialogHeader>
+            <DialogTitle className="text-[#d6deeb]">Commit History</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4 max-h-[300px] overflow-y-auto">
+            {isLoadingCommits ? (
+              <p className="text-center text-[#82aaff]">Loading commits...</p>
+            ) : commitHistory.length > 0 ? (
+              commitHistory.map((commit, index) => (
+                <div key={index} className="border-b border-[#1d3b53] py-2">
+                  <p className="text-[#7fdbca] font-medium">Commit ID: {commit._id}</p>
+                </div>
+              ))
+            ) : (
+              <p className="text-center text-[#4f6479]">No commit history found</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsCommitHistoryOpen(false)}
+              className="bg-transparent border-[#1d3b53] text-[#d6deeb] hover:bg-[#1d3b53] hover:text-[#c5e4fd]"
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </>
   );
 }
