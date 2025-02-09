@@ -23,6 +23,7 @@ import {
   Share2,
   Plus,
   Users,
+  GitCommit
 } from "lucide-react";
 
 // UI Components
@@ -44,7 +45,15 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_SERVER_URL;
 
 // import { useToast } from "@/components/ui/use-toast";?
 
-function Navbar({ repoName}) {
+const handleCommit = async () => {
+  try {
+    console.log(repoState)
+  } catch (error) {
+    console.log(error)
+  }
+}
+
+function Navbar({ repoName }) {
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -62,7 +71,7 @@ function Navbar({ repoName}) {
     }
 
     setIsLoading(true);
-    
+
     try {
       const response = await fetch(`${BACKEND_URL}/api/v1/repo/add-collabs`, {
         method: 'POST',
@@ -98,6 +107,8 @@ function Navbar({ repoName}) {
     }
   };
 
+
+
   return (
     <>
       <nav className="h-12 bg-[#011627] border-b border-[#1d3b53] flex items-center justify-between px-4">
@@ -123,7 +134,13 @@ function Navbar({ repoName}) {
             <Play className="w-4 h-4" />
             Run
           </button>
-          
+
+          {/* Commit to GitHub Button */}
+          <button className="px-3 py-1.5 bg-[#ffcc00] text-[#011627] rounded-md text-sm flex items-center gap-2 hover:bg-[#ffd633] transition-colors font-medium" onClick={handleCommit}>
+            <GitCommit className="w-4 h-4" />
+            Commit
+          </button>
+
           <button
             className="p-1.5 hover:bg-[#1d3b53] rounded-md transition-colors group"
             onClick={() => setIsShareOpen(true)}
@@ -201,9 +218,9 @@ function SandpackBetter() {
   const { files, activeFile } = sandpack;
   const [prevFiles, setPrevFiles] = useState(files);
   const code = files[activeFile].code;
- 
+
   const user = JSON.parse(localStorage.getItem('user'))?.uid;
-  const {repoState}=useRepoStore()
+  const { repoState } = useRepoStore()
 
   const editorRef = useRef(null);
   const [cursors, setCursors] = useState([]);
@@ -212,22 +229,22 @@ function SandpackBetter() {
   const params = useParams();
 
   useEffect(() => {
-    console.log('files',files);
-    
+    console.log('files', files);
+
     const handleFileCreation = async (newFiles) => {
       try {
         // Make API call
         const repoId = params.repo;
-        const arr=Object.keys(newFiles).filter((key)=>key.startsWith('/src/')).map((key)=>{
+        const arr = Object.keys(newFiles).filter((key) => key.startsWith('/src/')).map((key) => {
           return {
-            'content':files[key].code,
-            'path':key.split('/').slice(-1).join('/'),
-            'name':key.split('/').slice(-1).join('/')
+            'content': files[key].code,
+            'path': key.split('/').slice(-1).join('/'),
+            'name': key.split('/').slice(-1).join('/')
           }
         });
-        console.log('arr',arr);
+        console.log('arr', arr);
         console.log(repoId);
-        
+
         const response = await axios.post(
           `${process.env.NEXT_PUBLIC_SERVER_URL}/api/v1/file/add-files`,
           {
@@ -241,8 +258,8 @@ function SandpackBetter() {
         console.error("Error creating file:", error);
       }
     };
-    if(files)
-    handleFileCreation(files);
+    if (files)
+      handleFileCreation(files);
 
     setPrevFiles(files);
   }, [files]);
@@ -378,10 +395,10 @@ function SandpackBetter() {
       </div>
     </div>
   );
- 
+
   return (
     <div className="flex flex-col h-screen bg-[#011627] font-jetbrains">
-      <Navbar repoName={repoState.repo.name}/>
+      <Navbar repoName={repoState.repo.name} />
       <div className="flex-1 flex overflow-hidden">
         {/* File Explorer */}
         <div className="w-64 border-r border-[#1E2D3D] flex flex-col">
