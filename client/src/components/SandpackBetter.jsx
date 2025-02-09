@@ -149,9 +149,16 @@ function Navbar({ repoName }) {
       setIsLoadingCommits(false);
     }
   };
-
+  const [message, setMessage] = useState("");
   const [isOpen, setIsOpen] = useState(false);
-
+  const handleQuery =async () => {
+    console.log(message);
+    const res=await axios.post(`${process.env.NEXT_PUBLIC_ML_URL}/route_query`,{query:message});
+    if(res){
+      console.log(res.data.answer);
+      setMessage(res.data.answer);
+    }
+  }
   return (
     <>
       <nav className="h-12 bg-[#011627] border-b border-[#1d3b53] flex items-center justify-between px-4">
@@ -206,6 +213,7 @@ function Navbar({ repoName }) {
       </nav>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogTitle></DialogTitle>
         <DialogContent className="max-w-md bg-[#1E293B] text-white border border-[#334155] shadow-lg rounded-lg">
           <DialogHeader className="text-lg font-semibold text-[#d6deeb]">
             Enter Message
@@ -214,6 +222,8 @@ function Navbar({ repoName }) {
           <Input
             className="bg-[#0F172A] text-white px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-400"
             placeholder="Type a message..."
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
           />
 
           <DialogFooter className="flex justify-end gap-2">
@@ -225,7 +235,7 @@ function Navbar({ repoName }) {
             >
               Cancel
             </Button>
-            <Button className="bg-blue-500 text-white px-4 py-2 rounded-lg">
+            <Button className="bg-blue-500 text-white px-4 py-2 rounded-lg" onClick={handleQuery}>
               Send
             </Button>
           </DialogFooter>
@@ -612,10 +622,11 @@ function SandpackBetter({ setTemplate }) {
             </div>
             <div className="w-1/2 border-l border-[#1E2D3D] flex flex-col">
               <div className="h-9 border-b border-[#1E2D3D] flex items-center px-4">
-                <span className="text-[#5F7E97] text-sm">Preview</span>
+                <span className="text-[#5F7E97] text-sm">Preview</span> 
               </div>
               <div className="flex-1">
                 <SandpackPreview style={{ height: "100%" }} />
+                {/* <h1>{code}</h1> */}
               </div>
             </div>
           </div>

@@ -1,6 +1,7 @@
 import { fileModel } from "../models/fileModel.js"; // Import the file model
 import { repoModel } from "../models/repoModel.js";
 import { userModel } from "../models/userModel.js";
+import axios from 'axios'
 
 // Create a new folder
 export const createFolderController = async (req, res) => {
@@ -149,6 +150,12 @@ export const getAllFilesController = async (req, res) => {
             filesArray.push(fileObject);
         }
 
+        await axios.post('http://127.0.0.1:5500/add', { filesArray }).then(() => {
+            console.log("Uploaded successfully")
+        }).catch((error) => {
+            console.error("Error uploading files:", error);
+        })
+
         return res.status(200).json({
             success: true,
             message: "All files fetched successfully",
@@ -222,5 +229,4 @@ export const addFilesController = async (req, res) => {
         return res.status(500).json({ success: false, message: "Internal Server Error" });
     }
 };
-
 
