@@ -3,6 +3,7 @@ from flask_cors import CORS
 import dotenv
 import os
 from Langchain import GroqRAGSystem
+from groq import Groq
 # Initialize the Flask app
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -115,6 +116,25 @@ def delete():
         return jsonify({"message": "Inventory item deleted successfully"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+@app.route("/normal_query", methods=["POST"])
+def normal_query():
+    message=request.json.get("message")
+    client = Groq(
+        api_key=os.environ.get("GROQ_API_KEY"),
+    )
+
+    chat_completion = client.chat.completions.create(
+        messages=[
+            {
+                "role": "user",
+                "content": f"Explain the message and return the answer in normal text {message}",
+            }
+        ],
+        model="llama-3.3-70b-versatile",
+    )
+
+    return (chat_completion.choices[0].message.content)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True,port=5500)
