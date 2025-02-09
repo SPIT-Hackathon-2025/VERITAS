@@ -161,3 +161,48 @@ export const getAllFilesController = async (req, res) => {
     }
 };
 
+export const addFilesController = async (req, res) => {
+    try {
+        const { repoId, files } = req.body;
+
+        // Find the repository
+        let repo = await repoModel.findById(repoId);
+        if (!repo) {
+            return res.status(404).json({ success: false, message: "Repository not found" });
+        }
+
+        while (repo.nextCommit) {
+            repo = await repoModel.findById(repo.nextCommit);
+        }
+
+        // Create and save files
+        const createdFiles = [];
+        for (const file of files) {
+            const newFile = await fileModel.create({
+                repo: repoId,
+                parent: null, // Root directory
+                name: file.name,
+                path: file.path,
+                content: file.content,
+                isFile: true,
+                children: []
+            });
+            createdFiles.push(newFile._id);
+        }
+
+        // Update repository's mainFolders array with new files
+        repo.mainFolders = [...repo.mainFolders, ...createdFiles];
+        await repo.save();
+
+        return res.status(201).json({
+            success: true,
+            message: "Files added successfully",
+            files: createdFiles
+        });
+
+    } catch (error) {
+        console.error("Error adding files:", error);
+        return res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+};
+
