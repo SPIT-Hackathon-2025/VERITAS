@@ -1,178 +1,15 @@
-import React, { useState, useEffect, useRef } from "react";
 import {
   SandpackPreview,
   SandpackCodeEditor,
   useSandpack,
 } from "@codesandbox/sandpack-react";
 import { SandpackFileExplorer } from "sandpack-file-explorer";
+import { Terminal, Plus, Users } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { useSocket } from "@/app/context/socket";
 import useOnlineUserStore from "@/app/context/onlineUserStore";
+import Navbar from './code-editor/ide-navbar';
 
-// Icons from Lucide-react
-import {
-  Play,
-  GitBranch,
-  Settings,
-  File,
-  Folder,
-  Search,
-  Terminal,
-  Share2,
-  Plus,
-  Users,
-} from "lucide-react";
-
-// UI Components
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-// import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-// import { Play, GitBranch, Settings, File, Folder, Search, Terminal, Share2 } from "lucide-react";
-// import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { useAuth } from "@/app/hooks/useAuth";
-import useRepoStore from "@/app/context/repoStore";
-const BACKEND_URL = process.env.NEXT_PUBLIC_SERVER_URL;
-
-// import { useToast } from "@/components/ui/use-toast";?
-
-function Navbar({ repoName}) {
-  const [isShareOpen, setIsShareOpen] = useState(false);
-  const [email, setEmail] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const { user } = useAuth();
-  // const { toast } = useToast();
-
-  const handleShare = async () => {
-    if (!email || !user?.uid || !repoName) {
-      // toast({
-      //   title: "Error",
-      //   description: "Missing required information",
-      //   variant: "destructive",
-      // });
-      return;
-    }
-
-    setIsLoading(true);
-    
-    try {
-      const response = await fetch(`${BACKEND_URL}/api/v1/repo/add-collabs`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ownerId: user.uid,
-          repoName: repoName,
-          collaborators: [email]
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to share repository');
-      }
-
-      // toast({
-      //   title: "Success",
-      //   description: `Repository shared with ${email}`,
-      // });
-
-      setEmail("");
-      setIsShareOpen(false);
-    } catch (error) {
-      // toast({
-      //   title: "Error",
-      //   description: error.message || "Failed to share repository",
-      //   variant: "destructive",
-      // });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return (
-    <>
-      <nav className="h-12 bg-[#011627] border-b border-[#1d3b53] flex items-center justify-between px-4">
-        <div className="flex items-center space-x-4">
-          <h1 className="text-[#d6deeb] font-medium">Web IDE</h1>
-          <div className="flex space-x-2">
-            <button className="p-1.5 hover:bg-[#1d3b53] rounded-md transition-colors group">
-              <File className="w-4 h-4 text-[#82aaff] group-hover:text-[#c5e4fd]" />
-            </button>
-            <button className="p-1.5 hover:bg-[#1d3b53] rounded-md transition-colors group">
-              <Folder className="w-4 h-4 text-[#82aaff] group-hover:text-[#c5e4fd]" />
-            </button>
-            <button className="p-1.5 hover:bg-[#1d3b53] rounded-md transition-colors group">
-              <Search className="w-4 h-4 text-[#82aaff] group-hover:text-[#c5e4fd]" />
-            </button>
-            <button className="p-1.5 hover:bg-[#1d3b53] rounded-md transition-colors group">
-              <GitBranch className="w-4 h-4 text-[#82aaff] group-hover:text-[#c5e4fd]" />
-            </button>
-          </div>
-        </div>
-        <div className="flex items-center space-x-4">
-          <button className="px-3 py-1.5 bg-[#7fdbca] text-[#011627] rounded-md text-sm flex items-center gap-2 hover:bg-[#9ce0d0] transition-colors font-medium">
-            <Play className="w-4 h-4" />
-            Run
-          </button>
-          
-          <button
-            className="p-1.5 hover:bg-[#1d3b53] rounded-md transition-colors group"
-            onClick={() => setIsShareOpen(true)}
-          >
-            <Share2 className="w-4 h-4 text-[#82aaff] group-hover:text-[#c5e4fd]" />
-          </button>
-          <button className="p-1.5 hover:bg-[#1d3b53] rounded-md transition-colors group">
-            <Settings className="w-4 h-4 text-[#82aaff] group-hover:text-[#c5e4fd]" />
-          </button>
-        </div>
-      </nav>
-
-      <Dialog open={isShareOpen} onOpenChange={setIsShareOpen}>
-        <DialogContent className="bg-[#011627] border border-[#1d3b53] text-[#d6deeb]">
-          <DialogHeader>
-            <DialogTitle className="text-[#d6deeb]">Share Repository</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Input
-                id="email"
-                placeholder="Enter email address"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="bg-[#1d3b53] border-[#1d3b53] text-[#d6deeb] placeholder:text-[#4f6479]"
-                disabled={isLoading}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsShareOpen(false)}
-              className="bg-transparent border-[#1d3b53] text-[#d6deeb] hover:bg-[#1d3b53] hover:text-[#c5e4fd]"
-              disabled={isLoading}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleShare}
-              className="bg-[#7fdbca] text-[#011627] hover:bg-[#9ce0d0]"
-              disabled={isLoading}
-            >
-              {isLoading ? "Sharing..." : "Share"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-}
 const OnlineUserBadge = ({ name, email }) => (
   <div className="flex items-center gap-2 p-2 hover:bg-[#1E2D3D] rounded transition-colors">
     <div className="relative">
@@ -199,8 +36,7 @@ function SandpackBetter() {
   const code = files[activeFile].code;
   const {users} = useOnlineUserStore();
   const user = JSON.parse(localStorage.getItem('user'))?.uid;
-  const {repoState}=useRepoStore()
-
+  
   const editorRef = useRef(null);
   const [cursors, setCursors] = useState([]);
 
@@ -321,10 +157,10 @@ function SandpackBetter() {
       </div>
     </div>
   );
- 
+
   return (
     <div className="flex flex-col h-screen bg-[#011627] font-jetbrains">
-      <Navbar repoName={repoState.repo.name}/>
+      <Navbar />
       <div className="flex-1 flex overflow-hidden">
         {/* File Explorer */}
         <div className="w-64 border-r border-[#1E2D3D] flex flex-col">
