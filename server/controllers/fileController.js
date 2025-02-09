@@ -165,21 +165,28 @@ export const addFilesController = async (req, res) => {
     try {
         const { repoId, files } = req.body;
 
-        // Find the repository
-        let repo = await repoModel.findById(repoId);
+        // Find the latest version of the repository
+        let repo = await repoModel.findById(repoId).populate("mainFolders");
         if (!repo) {
             return res.status(404).json({ success: false, message: "Repository not found" });
         }
 
         while (repo.nextCommit) {
-            repo = await repoModel.findById(repo.nextCommit);
+            repo = await repoModel.findById(repo.nextCommit).populate("mainFolders");
         }
 
-        // Create and save files
+        // Get existing file names in the root directory
+        const existingFileNames = new Set(repo.mainFolders.map(file => file.name));
+
+        // Create and save files if they don't already exist and name isn't "addFile"
         const createdFiles = [];
         for (const file of files) {
+            if (file.name === "addFile" || existingFileNames.has(file.name)) {
+                continue; // Skip this file
+            }
+
             const newFile = await fileModel.create({
-                repo: repoId,
+                repo: repo._id,
                 parent: null, // Root directory
                 name: file.name,
                 path: file.path,
@@ -187,7 +194,17 @@ export const addFilesController = async (req, res) => {
                 isFile: true,
                 children: []
             });
+
             createdFiles.push(newFile._id);
+            existingFileNames.add(file.name); // Update existing files set
+        }
+
+        // If no new files were added, return a message
+        if (createdFiles.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "No new files were added (files may already exist or are restricted)"
+            });
         }
 
         // Update repository's mainFolders array with new files
@@ -205,4 +222,5 @@ export const addFilesController = async (req, res) => {
         return res.status(500).json({ success: false, message: "Internal Server Error" });
     }
 };
+
 
