@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/dialog";
 // import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { autocompletion, completionKeymap } from "@codemirror/autocomplete";
 // import { Play, GitBranch, Settings, File, Folder, Search, Terminal, Share2 } from "lucide-react";
 // import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -49,7 +50,7 @@ function Navbar({ repoName }) {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
-  const { repoState } = useRepoStore()
+  const { repoState } = useRepoStore();
   // const { toast } = useToast();
   const handleCommit = async () => {
     try {
@@ -68,7 +69,6 @@ function Navbar({ repoName }) {
       );
       if (response) {
         console.log(response);
-
       }
     } catch (error) {
       console.log(error);
@@ -126,13 +126,15 @@ function Navbar({ repoName }) {
   const [isLoadingCommits, setIsLoadingCommits] = useState(false);
 
   const fetchCommitHistory = async () => {
-    console.log(repoState)
+    console.log(repoState);
     if (!repoState.repo._id) return;
 
     setIsLoadingCommits(true);
 
     try {
-      const response = await fetch(`${BACKEND_URL}/api/v1/repo/get-commit-history/${repoState.repo._id}`);
+      const response = await fetch(
+        `${BACKEND_URL}/api/v1/repo/get-commit-history/${repoState.repo._id}`
+      );
       if (!response.ok) {
         throw new Error("Failed to fetch commit history");
       }
@@ -163,10 +165,13 @@ function Navbar({ repoName }) {
             <button className="p-1.5 hover:bg-[#1d3b53] rounded-md transition-colors group" onClick={() => setIsOpen(true)}>
               <Search className="w-4 h-4 text-[#82aaff] group-hover:text-[#c5e4fd]" />
             </button>
-            <button className="p-1.5 hover:bg-[#1d3b53] rounded-md transition-colors group" onClick={() => {
-              setIsCommitHistoryOpen(true);
-              fetchCommitHistory(); // Fetch commits when opening the dialog
-            }}>
+            <button
+              className="p-1.5 hover:bg-[#1d3b53] rounded-md transition-colors group"
+              onClick={() => {
+                setIsCommitHistoryOpen(true);
+                fetchCommitHistory(); // Fetch commits when opening the dialog
+              }}
+            >
               <GitBranch className="w-4 h-4 text-[#82aaff] group-hover:text-[#c5e4fd]" />
             </button>
           </div>
@@ -277,11 +282,15 @@ function Navbar({ repoName }) {
             ) : commitHistory.length > 0 ? (
               commitHistory.map((commit, index) => (
                 <div key={index} className="border-b border-[#1d3b53] py-2">
-                  <p className="text-[#7fdbca] cursor-pointer font-medium">Commit ID: {commit}</p>
+                  <p className="text-[#7fdbca] cursor-pointer font-medium">
+                    Commit ID: {commit}
+                  </p>
                 </div>
               ))
             ) : (
-              <p className="text-center text-[#4f6479]">No commit history found</p>
+              <p className="text-center text-[#4f6479]">
+                No commit history found
+              </p>
             )}
           </div>
           <DialogFooter>
@@ -295,7 +304,6 @@ function Navbar({ repoName }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
     </>
   );
 }
@@ -316,7 +324,7 @@ const OnlineUserBadge = ({ name, email }) => (
   </div>
 );
 
-function SandpackBetter() {
+function SandpackBetter({ setTemplate }) {
   const socket = useSocket();
   const [showConsole, setShowConsole] = useState(false);
   const [showOnlineUsers, setShowOnlineUsers] = useState(true);
@@ -324,6 +332,7 @@ function SandpackBetter() {
   const { files, activeFile } = sandpack;
   const [prevFiles, setPrevFiles] = useState(files);
   const code = files[activeFile].code;
+  const [selectedTemplate, setSelectedTemplate] = useState('');
 
   const user = JSON.parse(localStorage.getItem("user"))?.uid;
   const { repoState } = useRepoStore();
@@ -333,6 +342,13 @@ function SandpackBetter() {
 
   const { users } = useOnlineUserStore();
   const params = useParams();
+
+  // Handle template change
+  const handleTemplateChange = (e) => {
+    const newTemplate = e.target.value;
+    setSelectedTemplate(newTemplate);
+    setTemplate(newTemplate); // Update the parent component's template state
+  };
 
   useEffect(() => {
     console.log("files", files);
@@ -386,12 +402,10 @@ function SandpackBetter() {
   useEffect(() => {
     if (socket) {
       socket.on("fileUpdated", ({ filePath, newCode, repo }) => {
-        // Only update if the file update is for our repo
         sandpack.updateFile(filePath, newCode);
       });
 
       socket.on("fileCreated", ({ path, content, name, repoId }) => {
-        // Update Sandpack with the new file
         const fullPath = `/src/${path}`;
         if (!files[fullPath]) {
           sandpack.updateFile(fullPath, content);
@@ -414,7 +428,6 @@ function SandpackBetter() {
       });
 
       socket.on("getAllOnlineUsers", ({ users, repo }) => {
-        // Only update users if the update is for our repo
         useOnlineUserStore.setState({ users });
       });
 
@@ -455,17 +468,9 @@ function SandpackBetter() {
 
   const getUserColor = (userId) => {
     const colors = [
-      "#FF6B6B", // Bright Red
-      "#FF9F43", // Vivid Orange
-      "#FFD166", // Vibrant Yellow
-      "#06D6A0", // Neon Green
-      "#4ECDC4", // Cyan
-      "#45B7D1", // Bright Blue
-      "#9B59B6", // Deep Purple
-      "#F72585", // Electric Pink
-      "#FFFFFF", // White for high contrast
+      "#FF6B6B", "#FF9F43", "#FFD166", "#06D6A0", "#4ECDC4",
+      "#45B7D1", "#9B59B6", "#F72585", "#FFFFFF"
     ];
-
     return colors[parseInt(userId, 32) % colors.length];
   };
 
@@ -513,6 +518,24 @@ function SandpackBetter() {
               <Plus className="w-4 h-4 text-[#5F7E97]" />
             </button>
           </div>
+
+          {/* Template Selector */}
+          <div className="p-3 border-b border-[#1E2D3D]">
+            <select
+              value={selectedTemplate}
+              onChange={handleTemplateChange}
+              className="w-full bg-[#1E2D3D] text-[#5F7E97] border border-[#1E2D3D] rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#5F7E97]"
+            >
+              <option value="">Select Template</option>
+              <option value="react">React</option>
+              <option value="react-ts">React TypeScript</option>
+              <option value="vanilla">Vanilla JS</option>
+              <option value="vue">Vue</option>
+              <option value="angular">Angular</option>
+              <option value="svelte">Svelte</option>
+            </select>
+          </div>
+
           <div className="flex-1 overflow-auto">
             <SandpackFileExplorer />
           </div>
@@ -545,7 +568,7 @@ function SandpackBetter() {
           </div>
         </div>
 
-        {/* Main Content Area */}
+        {/* Rest of the component remains the same */}
         <div className="flex-1 flex flex-col">
           <div className="flex flex-1">
             <div className="flex-1">
@@ -564,6 +587,8 @@ function SandpackBetter() {
                     height: "100%",
                     fontFamily: "JetBrains Mono, monospace",
                   }}
+                  extensions={[autocompletion()]}
+                  extensionsKeymap={[completionKeymap]}
                 />
                 {Object.entries(cursors).map(([userId, cursor]) => (
                   <RemoteCursor
@@ -607,5 +632,4 @@ function SandpackBetter() {
     </div>
   );
 }
-
 export default SandpackBetter;
