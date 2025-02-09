@@ -201,7 +201,7 @@ export const addFilesController = async (req, res) => {
 
         // If no new files were added, return a message
         if (createdFiles.length === 0) {
-            return res.status(400).json({
+            return res.status(210).json({
                 success: false,
                 message: "No new files were added (files may already exist or are restricted)"
             });
