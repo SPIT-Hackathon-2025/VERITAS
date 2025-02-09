@@ -10,6 +10,7 @@ import SandpackBetter from "@/components/SandpackBetter";
 import { useSearchParams } from "next/navigation"; // ✅ Use next/navigation instead of next/router
 import { SocketProvider } from "@/app/context/socket";
 import useRepoStore from "@/app/context/repoStore";
+import { ToastContainer } from "react-toastify";
 
 
 // Utility function to transform repository data
@@ -108,6 +109,7 @@ const MySandpackComponent = () => {
         </SandpackThemeProvider>
       </SandpackProvider>
     </div>
+    <ToastContainer/>
     </SocketProvider>
   );
 };
